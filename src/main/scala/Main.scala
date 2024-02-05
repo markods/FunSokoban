@@ -1,24 +1,33 @@
-import javax.swing._
-import java.awt.event._
+import com.formdev.flatlaf.FlatDarculaLaf
 
-object Main extends JFrame {
+import java.util.logging.{Level, Logger}
+import javax.swing.*
+
+
+object Main {
   def main(args: Array[String]): Unit = {
-    println("Hello World!")
+    try UIManager.setLookAndFeel(new FlatDarculaLaf)
+    catch {
+      case e: UnsupportedLookAndFeelException =>
+        logger.log(Level.WARNING, "Could not set FlatDarkLaf theme.")
+    }
     SwingUtilities.invokeLater(() => createAndShowGUI())
   }
 
   private def createAndShowGUI(): Unit = {
-    setTitle("Scala Swing Example")
-    setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+    val mainFrame = new JFrame
+    mainFrame.setTitle("Sokoban")
+    mainFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+    val icon = new ImageIcon(classOf[MainPanel].getResource("/box.png"))
+    mainFrame.setIconImage(icon.getImage)
 
-    val button = new JButton("Click Me!")
-    button.addActionListener((e: ActionEvent) => {
-      JOptionPane.showMessageDialog(null, "Button Clicked!")
-    })
+    val mainPanel = new MainPanel
+    mainFrame.getContentPane.add(mainPanel)
 
-    getContentPane.add(button)
-    pack()
-    setLocationRelativeTo(null)
-    setVisible(true)
+    mainFrame.pack()
+    mainFrame.setLocationRelativeTo(null)
+    mainFrame.setVisible(true)
   }
+
+  private val logger = Logger.getLogger(Main.getClass.getName)
 }
