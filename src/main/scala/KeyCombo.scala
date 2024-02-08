@@ -1,10 +1,8 @@
 import javax.swing.KeyStroke
 
 enum KeyCombo(private val _keyStroke: KeyStroke):
-  case CtrlZ extends KeyCombo(KeyStroke.getKeyStroke("CTRL Z"))
-  case CtrlY extends KeyCombo(KeyStroke.getKeyStroke("CTRL Y"))
-  case AltLeft extends KeyCombo(KeyStroke.getKeyStroke("ALT LEFT"))
-  case AltRight extends KeyCombo(KeyStroke.getKeyStroke("ALT RIGHT"))
+  case CtrlZ extends KeyCombo(KeyStroke.getKeyStroke("control Z"))
+  case CtrlY extends KeyCombo(KeyStroke.getKeyStroke("control Y"))
 
   case Tab extends KeyCombo(KeyStroke.getKeyStroke("TAB"))
   case Enter extends KeyCombo(KeyStroke.getKeyStroke("ENTER"))

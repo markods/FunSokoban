@@ -10,11 +10,6 @@ final class MainFrame(private val mainPanel: MainPanel,
     setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
     setIconImage(icon.getImage)
     getContentPane.add(mainPanel)
-
-
-    val inputMap = getRootPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
-    inputMap.put(KeyCombo.Left.keyStroke, null)
-    inputMap.put(KeyCombo.Right.keyStroke, null)
   }
 
   def display(): Unit = {
