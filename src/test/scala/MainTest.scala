@@ -1,6 +1,6 @@
 import org.scalatest.funspec.AnyFunSpec
 
-class MainTest extends AnyFunSpec {
+final class MainTest extends AnyFunSpec {
 
   describe("A Set") {
     describe("when empty") {

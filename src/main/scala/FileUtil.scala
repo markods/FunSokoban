@@ -1,6 +1,6 @@
 import java.awt.HeadlessException
 import java.io.*
-import java.nio.file.{FileVisitOption, Files, Paths}
+import java.nio.file.*
 import java.util.logging.{Level, Logger}
 import javax.swing.filechooser.FileNameExtensionFilter
 import javax.swing.{JFileChooser, JFrame}
@@ -10,9 +10,13 @@ import scala.util.Using
 
 
 object FileUtil {
+  private val logger = Logger.getLogger(getClass.getName)
+
   def readFromFile(filePath: String): Option[String] = {
     try Using.resource(Source.fromFile(filePath)) { source =>
-      Option(source.mkString)
+      val contents = source.mkString
+      val wrappedContents = if (contents.nonEmpty) Option(contents) else Option.empty
+      wrappedContents
     } catch {
       case ex: FileNotFoundException =>
         logger.log(Level.INFO, "Could not find file with given path.", ex)
@@ -26,31 +30,34 @@ object FileUtil {
   def writeToFile(filePath: String, content: String): Boolean = {
     try Using.resource(Files.newBufferedWriter(Paths.get(filePath))) { writer =>
       writer.write(content)
+      true
     } catch {
       case ex: FileNotFoundException =>
         logger.log(Level.INFO, "Could not find file with given path.", ex)
-        return false
+        false
       case ex: IOException =>
         logger.log(Level.INFO, "Could not open/write to file.", ex)
-        return false
+        false
     }
-    true
   }
 
-  def ensureFileExists(file: File): Boolean = {
+  def moveFile(oldFilePath: String, newFilePath: String): Boolean = {
     try {
-      file.getParentFile.mkdirs
-      file.createNewFile
-    }
-    catch {
-      case ex: SecurityException =>
-        logger.log(Level.INFO, "Could not create parent directories - insufficient privileges.", ex)
-        return false
+      val oldPath: Path = Paths.get(oldFilePath)
+      val newPath: Path = Paths.get(newFilePath)
+      Files.move(oldPath, newPath)
+      true
+    } catch {
+      case ex: FileAlreadyExistsException =>
+        logger.log(Level.INFO, "The destination file already exists.", ex)
+        false
+      case ex: FileNotFoundException =>
+        logger.log(Level.INFO, "Could not find file with given path.", ex)
+        false
       case ex: IOException =>
-        logger.log(Level.INFO, "Could not ensure the file exists.", ex)
-        return false
+        logger.log(Level.INFO, "Could not move file.", ex)
+        false
     }
-    true
   }
 
   def listFilesInDirectory(directoryPath: String): List[String] = {
@@ -76,15 +83,15 @@ object FileUtil {
     }
   }
 
-  def getUserSelectedPath(actionKind: ActionKind, fileKind: FileKind, previousPath: Option[File] = None): (Option[String], Option[File]) = {
+  def getUserSelectedPath(actionKind: FileActionKind, fileKind: FileKind, previousFilePath: Option[File] = None): (Option[String], Option[File]) = {
     val FileChooser = new JFileChooser
     FileChooser.setMultiSelectionEnabled(false)
     FileChooser.setFileSelectionMode(fileKind match {
       case FileKind.Directory => JFileChooser.DIRECTORIES_ONLY
       case FileKind.TextFile => JFileChooser.FILES_ONLY
     })
-    if (previousPath.nonEmpty) {
-      FileChooser.setCurrentDirectory(previousPath.orNull)
+    if (previousFilePath.nonEmpty) {
+      FileChooser.setCurrentDirectory(previousFilePath.orNull)
     }
     fileKind match {
       case FileKind.TextFile =>
@@ -100,11 +107,11 @@ object FileUtil {
       // Frame.getContentPane.setSize(new Dimension(640, 480))
 
       val dialogStatus = actionKind match {
-        case ActionKind.Open => FileChooser.showOpenDialog(Frame)
-        case ActionKind.Save => FileChooser.showSaveDialog(Frame)
+        case FileActionKind.Open => FileChooser.showOpenDialog(Frame)
+        case FileActionKind.Save => FileChooser.showSaveDialog(Frame)
       }
       if (dialogStatus != JFileChooser.APPROVE_OPTION) {
-        return (None, previousPath)
+        return (None, previousFilePath)
       }
 
       val usPath = FileChooser.getSelectedFile.getAbsolutePath
@@ -119,19 +126,10 @@ object FileUtil {
     catch {
       case ex: HeadlessException =>
         logger.log(Level.INFO, "Could not open file chooser.", ex)
-        (None, previousPath)
+        (None, previousFilePath)
       case ex: SecurityException =>
         logger.log(Level.INFO, "Could not create parent directories - insufficient privileges.", ex)
-        (None, previousPath)
+        (None, previousFilePath)
     }
   }
-
-
-  enum ActionKind:
-    case Open, Save
-
-  enum FileKind:
-    case Directory, TextFile
-
-  private val logger = Logger.getLogger(FileUtil.getClass.getName)
 }

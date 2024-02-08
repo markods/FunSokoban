@@ -5,29 +5,27 @@ import javax.swing.*
 
 
 object Main {
+  private val container = new Container
+  private val logger = Logger.getLogger(getClass.getName)
+
   def main(args: Array[String]): Unit = {
-    try UIManager.setLookAndFeel(new FlatDarculaLaf)
-    catch {
-      case e: UnsupportedLookAndFeelException =>
-        logger.log(Level.WARNING, "Could not set FlatDarkLaf theme.")
+    try {
+      UIManager.setLookAndFeel(new FlatDarculaLaf)
     }
-    SwingUtilities.invokeLater(() => createAndShowGUI())
+    catch {
+      case ex: UnsupportedLookAndFeelException =>
+        logger.log(Level.WARNING, "Could not set FlatDarkLaf theme.", ex)
+    }
+
+    try {
+      container.configure()
+      val mainFrame = container.getMainFrame
+      SwingUtilities.invokeLater(() => mainFrame.display())
+    }
+    catch {
+      case ex: Throwable =>
+        logger.log(Level.SEVERE, "Could not configure app, exiting.", ex)
+        System.exit(-1)
+    }
   }
-
-  private def createAndShowGUI(): Unit = {
-    val mainFrame = new JFrame
-    mainFrame.setTitle("Sokoban")
-    mainFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
-    val icon = new ImageIcon(classOf[MainPanel].getResource("/box.png"))
-    mainFrame.setIconImage(icon.getImage)
-
-    val mainPanel = new MainPanel
-    mainFrame.getContentPane.add(mainPanel)
-
-    mainFrame.pack()
-    mainFrame.setLocationRelativeTo(null)
-    mainFrame.setVisible(true)
-  }
-
-  private val logger = Logger.getLogger(Main.getClass.getName)
 }
