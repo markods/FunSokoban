@@ -28,12 +28,20 @@ final class ActionStack[T](private val noneAction: T) {
   }
 
   def redoAction(): T = {
-    if (iCurrentAction >= actionStack.size) {
+    if (iCurrentAction == actionStack.size) {
       return noneAction
     }
     val action: T = actionStack(iCurrentAction)
     iCurrentAction += 1
     action
+  }
+
+  def undoAllActions(): Unit = {
+    iCurrentAction = 0
+  }
+
+  def redoAllActions(): Unit = {
+    iCurrentAction = actionStack.size
   }
 
   def clear(): Unit = {

@@ -1,5 +1,5 @@
 import java.awt.event.{ActionEvent, ActionListener, KeyAdapter, KeyEvent}
-import java.awt.{Dimension, Insets}
+import java.awt.{Dimension, Insets, KeyboardFocusManager}
 import javax.swing.*
 import javax.swing.event.{ChangeEvent, ChangeListener}
 
@@ -66,7 +66,7 @@ final class MainPanel(private val jCanvas: Canvas,
       }
     }
     jPlay_LevelLabel.setText("Level")
-    jPlay_LevelComboBox.setModel(new DefaultComboBoxModel[String](Array[String]("Level 01 - Whale Island")))
+    jPlay_LevelComboBox.setModel(new DefaultComboBoxModel[String](Array[String]("----- choose level -----")))
     jPlay_LevelComboBox.addActionListener((evt: ActionEvent) => Play_LevelComboBoxActionPerformed(evt))
     jPlay_LevelComboBox.addKeyListener(jCanvasKeyListener)
     jPlay_MovesLabel.setText("Moves")
@@ -200,6 +200,16 @@ final class MainPanel(private val jCanvas: Canvas,
     jCreate_CommandTextArea.setWrapStyleWord(true);
     jCreate_CommandTextArea.setCursor(new java.awt.Cursor(java.awt.Cursor.TEXT_CURSOR));
     jCreate_CommandTextArea.setDoubleBuffered(true);
+    val keyboardFocusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager
+    jCreate_CommandTextArea.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, keyboardFocusManager.getDefaultFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS))
+    jCreate_CommandTextArea.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, keyboardFocusManager.getDefaultFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS))
+    val jCreate_CommandTextAreaKeymap = jCreate_CommandTextArea.getKeymap
+    jCreate_CommandTextAreaKeymap.addActionForKeyStroke(KeyCombo.Enter.keyStroke, new AbstractAction() {
+      @Override
+      def actionPerformed(evt: ActionEvent): Unit = {
+        Create_CommandTextAreaEnterTyped(evt)
+      }
+    })
     jCreate_CommandTextScrollPane.setViewportView(jCreate_CommandTextArea)
     val jCreate_PanelLayout = new GroupLayout(jCreate_Panel)
     jCreate_Panel.setLayout(jCreate_PanelLayout)
@@ -232,12 +242,13 @@ final class MainPanel(private val jCanvas: Canvas,
   }
 
   private def Play_UndoRedoMovesButtonsActionPerformed(evt: ActionEvent, moves: Int): Unit = {
+    var completedMoves = 0
     gameState.synchronized {
-      val completedMoves = gameState.player.undoRedo(moves)
-      if (completedMoves > 0) {
-        jPlay_MovesTextField.setText(gameState.player.moveNumber.toString)
-        jCanvas.repaint()
-      }
+      completedMoves = gameState.player.undoRedo(moves)
+    }
+    if (completedMoves > 0) {
+      jPlay_MovesTextField.setText(gameState.player.moveNumber.toString)
+      jCanvas.repaint()
     }
   }
 
@@ -253,31 +264,40 @@ final class MainPanel(private val jCanvas: Canvas,
     gameState.synchronized {
       // TODO
       gameState.player.setPositionUnchecked(5, 6)
-      gameTimer.restart()
     }
+    gameTimer.restart()
+    jPlay_MovesTextField.setText(gameState.player.moveNumber.toString)
   }
 
   private def CanvasPanelKeyPressed(evt: KeyEvent): Unit = {
     val keyStroke = KeyStroke.getKeyStroke(evt.getKeyCode, evt.getModifiersEx)
     var canvasChanged = false
 
+    // TODO: cleanup this code
+    // TODO: don't do setText/timer start when we're not in the play tab
     if (KeyCombo.Up.keyStroke.equals(keyStroke)) gameState.synchronized {
       canvasChanged = gameState.player.move(PlayerAction.PlayerUp)
+      jPlay_MovesTextField.setText(gameState.player.moveNumber.toString)
     }
     else if (KeyCombo.Down.keyStroke.equals(keyStroke)) gameState.synchronized {
       canvasChanged = gameState.player.move(PlayerAction.PlayerDown)
+      jPlay_MovesTextField.setText(gameState.player.moveNumber.toString)
     }
     else if (KeyCombo.Left.keyStroke.equals(keyStroke)) gameState.synchronized {
       canvasChanged = gameState.player.move(PlayerAction.PlayerLeft)
+      jPlay_MovesTextField.setText(gameState.player.moveNumber.toString)
     }
     else if (KeyCombo.Right.keyStroke.equals(keyStroke)) gameState.synchronized {
       canvasChanged = gameState.player.move(PlayerAction.PlayerRight)
+      jPlay_MovesTextField.setText(gameState.player.moveNumber.toString)
     }
     else if (KeyCombo.CtrlZ.keyStroke.equals(keyStroke)) gameState.synchronized {
       canvasChanged = gameState.player.undo()
+      jPlay_MovesTextField.setText(gameState.player.moveNumber.toString)
     }
     else if (KeyCombo.CtrlY.keyStroke.equals(keyStroke)) gameState.synchronized {
       canvasChanged = gameState.player.redo()
+      jPlay_MovesTextField.setText(gameState.player.moveNumber.toString)
     }
     else return
 
@@ -311,7 +331,23 @@ final class MainPanel(private val jCanvas: Canvas,
     jCanvas.repaint()
   }
 
-  private def Create_CommandTextAreaKeyTyped(evt: KeyEvent): Unit = {
-    // TODO
+  private def Create_CommandTextAreaEnterTyped(evt: ActionEvent): Unit = {
+    try {
+      val text = jCreate_CommandTextArea.getText()
+      jCreate_CommandTextArea.setText("")
+      if (text.isEmpty) {
+        return
+      }
+
+      val scrollBar = jCreate_CommandHistoryScrollPane.getVerticalScrollBar
+      val isScrollBarAtBottom = scrollBar.getValue + scrollBar.getVisibleAmount == scrollBar.getMaximum
+      jCreate_CommandHistoryTextArea.append("\n")
+      jCreate_CommandHistoryTextArea.append(text)
+      if (isScrollBarAtBottom) {
+        SwingUtilities.invokeLater(() => scrollBar.setValue(scrollBar.getMaximum - scrollBar.getVisibleAmount))
+      }
+    } catch {
+      case ex: NullPointerException =>
+    }
   }
 }
