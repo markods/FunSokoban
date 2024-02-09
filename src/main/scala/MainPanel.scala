@@ -107,8 +107,8 @@ final class MainPanel(private val jCanvas: Canvas,
     jPlay_RestartButton.addActionListener((evt: ActionEvent) => Play_RestartButtonActionPerformed(evt))
     jPlay_RestartButton.addKeyListener(jCanvasKeyListener)
     jPlay_InfoTextArea.setEditable(false)
-    jPlay_InfoTextArea.setColumns(20);
-    jPlay_InfoTextArea.setLineWrap(true);
+    jPlay_InfoTextArea.setColumns(20)
+    jPlay_InfoTextArea.setLineWrap(true)
     jPlay_InfoTextArea.setRows(5)
     jPlay_InfoTextArea.setTabSize(4)
     jPlay_InfoTextArea.setText("Keys\n------------------------\narrow keys - move player\nCtrl+z, Ctrl+y - undo, redo\n\n")
@@ -142,11 +142,11 @@ final class MainPanel(private val jCanvas: Canvas,
     jCreate_SaveButton.setText("Save")
     jCreate_SaveButton.addActionListener((evt: ActionEvent) => Create_SaveButtonActionPerformed(evt))
     jCreate_SaveButton.addKeyListener(jCanvasKeyListener)
-    jCreate_SetFloorButton.setIcon(gameAssets.tileIcon(Tile.FloorInside))
+    jCreate_SetFloorButton.setIcon(gameAssets.tileIcon(Tile.Floor))
     jCreate_SetFloorButton.setMaximumSize(new Dimension(42, 42))
     jCreate_SetFloorButton.setMinimumSize(new Dimension(42, 42))
     jCreate_SetFloorButton.setPreferredSize(new Dimension(42, 42))
-    jCreate_SetFloorButton.addActionListener((evt: ActionEvent) => Create_SetTileButtonsActionPerformed(evt, Tile.FloorOutside))
+    jCreate_SetFloorButton.addActionListener((evt: ActionEvent) => Create_SetTileButtonsActionPerformed(evt, Tile.Floor))
     jCreate_SetFloorButton.addKeyListener(jCanvasKeyListener)
     jCreate_SetWallButton.setIcon(gameAssets.tileIcon(Tile.Wall))
     jCreate_SetWallButton.setMaximumSize(new Dimension(42, 42))
@@ -184,29 +184,28 @@ final class MainPanel(private val jCanvas: Canvas,
     jCreate_SetPlayerGoalButton.setPreferredSize(new Dimension(42, 42))
     jCreate_SetPlayerGoalButton.addActionListener((evt: ActionEvent) => Create_SetTileButtonsActionPerformed(evt, Tile.PlayerGoal))
     jCreate_SetPlayerGoalButton.addKeyListener(jCanvasKeyListener)
-    jCreate_CommandHistoryTextArea.setEditable(false);
-    jCreate_CommandHistoryTextArea.setColumns(20);
-    jCreate_CommandHistoryTextArea.setLineWrap(true);
-    jCreate_CommandHistoryTextArea.setRows(5);
-    jCreate_CommandHistoryTextArea.setTabSize(4);
-    jCreate_CommandHistoryTextArea.setText("// Keys\n// ------------------------\n// Ctrl+z, Ctrl+y - undo, redo\n// enter - input command\n// arrow keys - move selection\n\n\n// Predefined commands\n// ------------------------\n// Parameters:\n//   @  - currently selected location (expands to coordinates)\n//   dir - {row, col}.\n//   i    - index of rows/cols.\n//   is   - index of the space between rows/cols.\n//   n   - number of rows/cols.\n//   t    - {- empty, # wall, X box, O Goal, B BoxOnGoal, P Player, R PlayerOnGoal}.\n//   x:y - position.\n\ntiles_extend(dir is n)\ntiles_delete(dir i n)\ntile_set(t x:y)\n\ngoal_invert()\nwall_minimize(x:y)\nwall_filter(x:y n)      // n: number of tiles\nwall_fractalize(x:y)\nlevel_validate()\n\n// Commands are executed in order, until one fails its check.\n// Angular brackets make a transaction. For example:\ndef foo(v1 v2) = tile_set(wall v1) [wall_fractalize(v2) level_validate()]\nundef foo\n\n\nUser commands\n------------------")
-    jCreate_CommandHistoryTextArea.setWrapStyleWord(true);
-    jCreate_CommandHistoryTextArea.setDoubleBuffered(true);
-    jCreate_CommandHistoryScrollPane.setViewportView(jCreate_CommandHistoryTextArea);
-    jCreate_CommandTextArea.setColumns(20);
-    jCreate_CommandTextArea.setLineWrap(true);
-    jCreate_CommandTextArea.setRows(5);
-    jCreate_CommandTextArea.setTabSize(4);
-    jCreate_CommandTextArea.setWrapStyleWord(true);
-    jCreate_CommandTextArea.setCursor(new java.awt.Cursor(java.awt.Cursor.TEXT_CURSOR));
-    jCreate_CommandTextArea.setDoubleBuffered(true);
+    jCreate_CommandHistoryTextArea.setEditable(false)
+    jCreate_CommandHistoryTextArea.setColumns(20)
+    jCreate_CommandHistoryTextArea.setLineWrap(true)
+    jCreate_CommandHistoryTextArea.setRows(5)
+    jCreate_CommandHistoryTextArea.setTabSize(4)
+    jCreate_CommandHistoryTextArea.setText(gameAssets.initialCommandHistory)
+    jCreate_CommandHistoryTextArea.setWrapStyleWord(true)
+    jCreate_CommandHistoryTextArea.setDoubleBuffered(true)
+    jCreate_CommandHistoryScrollPane.setViewportView(jCreate_CommandHistoryTextArea)
+    jCreate_CommandTextArea.setColumns(20)
+    jCreate_CommandTextArea.setLineWrap(true)
+    jCreate_CommandTextArea.setRows(5)
+    jCreate_CommandTextArea.setTabSize(4)
+    jCreate_CommandTextArea.setWrapStyleWord(true)
+    jCreate_CommandTextArea.setCursor(new java.awt.Cursor(java.awt.Cursor.TEXT_CURSOR))
+    jCreate_CommandTextArea.setDoubleBuffered(true)
     val keyboardFocusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager
     jCreate_CommandTextArea.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, keyboardFocusManager.getDefaultFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS))
     jCreate_CommandTextArea.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, keyboardFocusManager.getDefaultFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS))
     val jCreate_CommandTextAreaKeymap = jCreate_CommandTextArea.getKeymap
     jCreate_CommandTextAreaKeymap.addActionForKeyStroke(KeyCombo.Enter.keyStroke, new AbstractAction() {
-      @Override
-      def actionPerformed(evt: ActionEvent): Unit = {
+      override def actionPerformed(evt: ActionEvent): Unit = {
         Create_CommandTextAreaEnterTyped(evt)
       }
     })
@@ -324,7 +323,6 @@ final class MainPanel(private val jCanvas: Canvas,
 
   private def Create_SetTileButtonsActionPerformed(evt: ActionEvent, tile: Tile): Unit = {
     // TODO: add editor undo action
-    // TODO: recalculate if the floor is outside or inside
     gameState.synchronized {
       gameState.grid.setTile(gameState.player.position.i, gameState.player.position.j, tile)
     }

@@ -1,6 +1,6 @@
 ### Project specific ###
 target/
-
+.vscode
 
 
 ### Scala ###
@@ -155,6 +155,13 @@ nbbuild/
 dist/
 nbdist/
 .nb-gradle/
+
+
+
+### Metals ###
+.metals/
+.bloop/
+project/**/metals.sbt
 
 
 

@@ -48,13 +48,13 @@ final class Player(private val grid: Grid,
     wanted.promoteToBoxAction
   }
 
-  def moveUnchecked(checked: PlayerAction, actionKind: MovementActionKind): Boolean = {
+  def moveUnchecked(checked: PlayerAction, actionKind: UndoActionKind): Boolean = {
     val tilesToMove = checked.tilesToMove
     if (tilesToMove == 0) {
       return false
     }
 
-    val isUndo = actionKind == MovementActionKind.Undo
+    val isUndo = actionKind == UndoActionKind.Undo
     val dY = checked.movementY
     val dX = checked.movementX
     val i = playerPos.i + (if (!isUndo) 0 else -dY)
@@ -92,22 +92,22 @@ final class Player(private val grid: Grid,
     // Update player position.
     playerPos.i += (if (!isUndo) dY else -dY)
     playerPos.j += (if (!isUndo) dX else -dX)
-    if (actionKind eq MovementActionKind.Apply) {
+    if (actionKind eq UndoActionKind.Apply) {
       undoStack.applyAction(checked)
     }
     true
   }
 
   def move(wanted: PlayerAction): Boolean = {
-    moveUnchecked(checkMove(wanted), MovementActionKind.Apply)
+    moveUnchecked(checkMove(wanted), UndoActionKind.Apply)
   }
 
   def undo(): Boolean = {
-    moveUnchecked(undoStack.undoAction(), MovementActionKind.Undo)
+    moveUnchecked(undoStack.undoAction(), UndoActionKind.Undo)
   }
 
   def redo(): Boolean = {
-    moveUnchecked(undoStack.redoAction(), MovementActionKind.Redo)
+    moveUnchecked(undoStack.redoAction(), UndoActionKind.Redo)
   }
 
   // - for undo, + for redo

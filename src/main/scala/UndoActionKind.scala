@@ -1,2 +1,2 @@
-enum MovementActionKind:
+enum UndoActionKind:
   case Apply, Undo, Redo

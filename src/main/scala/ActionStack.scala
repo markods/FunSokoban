@@ -3,49 +3,55 @@ import scala.collection.mutable.ArrayBuffer
 final class ActionStack[T](private val noneAction: T) {
   private val actionStack: ArrayBuffer[T] = ArrayBuffer[T]()
   // Points after! the last executed action.
-  private var iCurrentAction: Int = 0
+  private var iNextAction: Int = 0
 
-  def size: Int = iCurrentAction
+  def size: Int = iNextAction
+
+  def foreach[U](f: T => U): Unit = actionStack.foreach(f)
 
   def applyAction(action: T): Unit = {
     if (noneAction == action) {
       return
     }
-    if (iCurrentAction < actionStack.size) {
-      actionStack.dropRightInPlace(actionStack.size - iCurrentAction)
-    }
+    dropLaterActions()
     actionStack.addOne(action)
-    iCurrentAction += 1
+    iNextAction += 1
   }
 
   def undoAction(): T = {
-    if (iCurrentAction == 0) {
+    if (iNextAction == 0) {
       return noneAction
     }
-    iCurrentAction -= 1
-    val action: T = actionStack(iCurrentAction)
+    iNextAction -= 1
+    val action: T = actionStack(iNextAction)
     action
   }
 
   def redoAction(): T = {
-    if (iCurrentAction == actionStack.size) {
+    if (iNextAction == actionStack.size) {
       return noneAction
     }
-    val action: T = actionStack(iCurrentAction)
-    iCurrentAction += 1
+    val action: T = actionStack(iNextAction)
+    iNextAction += 1
     action
   }
 
   def undoAllActions(): Unit = {
-    iCurrentAction = 0
+    iNextAction = 0
   }
 
   def redoAllActions(): Unit = {
-    iCurrentAction = actionStack.size
+    iNextAction = actionStack.size
+  }
+
+  private def dropLaterActions(): Unit = {
+    if (iNextAction < actionStack.size) {
+      actionStack.dropRightInPlace(actionStack.size - iNextAction)
+    }
   }
 
   def clear(): Unit = {
     actionStack.clear()
-    iCurrentAction = 0
+    iNextAction = 0
   }
 }

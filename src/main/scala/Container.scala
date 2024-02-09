@@ -11,10 +11,10 @@ final class Container {
     gameAssets = new GameAssets
 
     // TODO
-    val grid = new Grid(new GridSize(10, 12))
+    val grid = new Grid(new GridSize(10, 12), Tile.Floor)
     for (i <- 0 until grid.size.m; j <- 0 until grid.size.n) {
       if (Math.random >= 0.2) {
-        grid.setTile(i, j, Tile.FloorInside)
+        grid.setTile(i, j, Tile.Floor)
       } else {
         val index = (Math.random * Tile.values.length).toInt
         val tile = Tile.values.find(_.idx == index).get
@@ -26,7 +26,10 @@ final class Container {
 
     val playerActionStack = new ActionStack[PlayerAction](PlayerAction.None)
     val player = new Player(grid, playerPosition, playerActionStack)
-    gameState = new GameState(grid, player)
+    
+    val editorPosition = new GridPosition(5, 6)
+    val editor = new Editor(grid, editorPosition)
+    gameState = new GameState(grid, player, editor)
 
     canvas = new Canvas(paintAssets, gameAssets, gameState)
     mainPanel = new MainPanel(canvas, gameAssets, gameState)

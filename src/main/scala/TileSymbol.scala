@@ -1,19 +1,17 @@
 object TileSymbol {
-  private val TileToCharMap = new Array[Char](Tile.values.length)
-  TileToCharMap(Tile.FloorOutside.idx) = '-'
-  TileToCharMap(Tile.FloorInside.idx) = '-'
-  TileToCharMap(Tile.Wall.idx) = '#'
-  TileToCharMap(Tile.Box.idx) = 'X'
-  TileToCharMap(Tile.Goal.idx) = '.'
-  TileToCharMap(Tile.BoxGoal.idx) = 'O'
-  TileToCharMap(Tile.Player.idx) = 'S'
-  TileToCharMap(Tile.PlayerGoal.idx) = 'T'
+  private val TileToSymbolMap = new Array[Char](Tile.values.length)
+  TileToSymbolMap(Tile.Floor.idx) = '-'
+  TileToSymbolMap(Tile.Wall.idx) = '#'
+  TileToSymbolMap(Tile.Box.idx) = 'X'
+  TileToSymbolMap(Tile.Goal.idx) = '.'
+  TileToSymbolMap(Tile.BoxGoal.idx) = 'O'
+  TileToSymbolMap(Tile.Player.idx) = 'S'
+  TileToSymbolMap(Tile.PlayerGoal.idx) = 'T'
 
-  def tileToSymbol(tile: Tile): Char = TileToCharMap(tile.idx)
+  def toSymbol(tile: Tile): Char = TileToSymbolMap(tile.idx)
 
-  def symbolToTile(tileChar: Char): Tile = tileChar match {
-    case '-' => Tile.FloorOutside
-    // case '-' -> Tile.FloorInside   // Needs to be determined based on the whole grid.
+  def toTile(tileSymbol: Char): Tile = tileSymbol match {
+    case '-' => Tile.Floor
     case '#' => Tile.Wall
     case 'X' => Tile.Box
     case '.' => Tile.Goal
