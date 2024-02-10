@@ -1,10 +1,19 @@
 import TileBandKind.{Column, Row}
 
+import scala.annotation.tailrec
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 final class Grid(private val gs: GridSize,
                  private val defaultTile: Tile) extends Cloneable {
   private val tiles: ArrayBuffer[Tile] = ArrayBuffer.fill(gs.m * gs.n)(defaultTile)
+
+  def this(gs: GridSize, tiles: IterableOnce[Tile], defaultTile: Tile) = {
+    this(new GridSize(0, 0), defaultTile)
+    this.tiles.addAll(tiles)
+    this.gs.m = gs.m
+    this.gs.n = gs.n
+  }
 
   def size: GridSize = gs
 
@@ -12,8 +21,10 @@ final class Grid(private val gs: GridSize,
 
   def validAddPosition(i: Int, j: Int): Boolean = i >= 0 && i <= gs.m && j >= 0 && j <= gs.n
 
+  // Unchecked.
   def getTile(i: Int, j: Int): Tile = tiles(gs.n * i + j)
 
+  // Unchecked.
   def setTile(i: Int, j: Int, tile: Tile): Unit = {
     tiles(gs.n * i + j) = tile
   }
@@ -34,25 +45,56 @@ final class Grid(private val gs: GridSize,
     val tileC: Tile = getTile(i3, j3)
     linearRotation match {
       // Default.
-      case LinearRotation.Right => {
+      case LinearRotation.Right =>
         setTile(i1, j1, tileC)
         setTile(i2, j2, tileA)
         setTile(i3, j3, tileB)
-      }
       // Inverse.
-      case LinearRotation.Left => {
+      case LinearRotation.Left =>
         setTile(i1, j1, tileB)
         setTile(i2, j2, tileC)
         setTile(i3, j3, tileA)
-      }
     }
   }
 
-  def findTiles(onSuccess: Tile => Boolean): ArrayBuffer[GridPosition] = {
+  def foreach[U](f: (i: Int, j: Int, tile: Tile) => U): Unit = {
+    for (i <- 0 until gs.m; j <- 0 until gs.n) {
+      f(i, j, getTile(i, j))
+    }
+  }
+
+  def forall(p: (i: Int, j: Int, tile: Tile) => Boolean): Boolean = {
+    var i = 0
+    var j = 0
+    tiles.forall(tile => {
+      val res = p(i, j, getTile(i, j))
+      j += 1
+      if (j == gs.n) {
+        i += 1
+        j = 0
+      }
+      res
+    })
+  }
+
+  def findFirst(p: (i: Int, j: Int, tile: Tile) => Boolean): Option[GridPosition] = {
+    var result: Option[GridPosition] = Option.empty
+    forall((i, j, tile) => {
+      val found = p(i, j, tile)
+      if (found) {
+        result = Option(new GridPosition(i, j))
+      }
+      found
+    })
+
+    result
+  }
+
+  def findAll(p: (i: Int, j: Int, tile: Tile) => Boolean): ArrayBuffer[GridPosition] = {
     val result = ArrayBuffer[GridPosition]()
 
     foreach((i, j, tile) => {
-      if (onSuccess(tile)) {
+      if (p(i, j, tile)) {
         result.addOne(GridPosition(i, j))
       }
     })
@@ -60,10 +102,71 @@ final class Grid(private val gs: GridSize,
     result
   }
 
-  def foreach[U](f: (i: Int, j: Int, tile: Tile) => U): Unit = {
-    for (i <- 0 until gs.m; j <- 0 until gs.n) {
-      f(i, j, getTile(i, j))
+  def floodFillFind(pos: GridPosition,
+                    onInside: (i: Int, j: Int, tile: Tile) => Boolean,
+                    calculateSurfaceLayer: Boolean,
+                    breakOnReachingOutsideGrid: Boolean): FloodFillResult = {
+    val ff = new FloodFillResult()
+    if (!validPosition(pos.i, pos.j)) {
+      ff.reachedOutsideGrid = true
+      return ff
     }
+    val unvisited = mutable.ArrayDeque[GridPosition]()
+    unvisited.append(pos)
+
+    def appendUnvisited(position: GridPosition): Unit = {
+      if (validPosition(position.i, position.j) && !ff.area.contains(position)) {
+        unvisited.append(position)
+      } else {
+        ff.reachedOutsideGrid = true
+      }
+    }
+
+    def appendOuterLayer(position: GridPosition): Unit = {
+      if (validPosition(position.i, position.j) && !ff.area.contains(position)) {
+        ff.surfaceLayer.add(position)
+      }
+    }
+
+    @tailrec
+    def floodFillTailrec(): Unit = {
+      if (unvisited.isEmpty) {
+        return
+      }
+
+      val position = unvisited.removeHead()
+      ff.area.add(position)
+
+      val tile = getTile(position.i, position.j)
+      if (onInside(position.i, position.j, tile)) {
+        // Plus.
+        appendUnvisited(new GridPosition(position.i - 1, position.j))
+        appendUnvisited(new GridPosition(position.i + 1, position.j))
+        appendUnvisited(new GridPosition(position.i, position.j - 1))
+        appendUnvisited(new GridPosition(position.i, position.j + 1))
+      }
+      else if (calculateSurfaceLayer) {
+        // Plus.
+        appendUnvisited(new GridPosition(position.i - 1, position.j))
+        appendUnvisited(new GridPosition(position.i + 1, position.j))
+        appendUnvisited(new GridPosition(position.i, position.j - 1))
+        appendUnvisited(new GridPosition(position.i, position.j + 1))
+        // Diagonals.
+        appendUnvisited(new GridPosition(position.i - 1, position.j - 1))
+        appendUnvisited(new GridPosition(position.i + 1, position.j + 1))
+        appendUnvisited(new GridPosition(position.i + 1, position.j - 1))
+        appendUnvisited(new GridPosition(position.i - 1, position.j + 1))
+      }
+
+      if (ff.reachedOutsideGrid && breakOnReachingOutsideGrid) {
+        return
+      }
+
+      floodFillTailrec()
+    }
+
+    floodFillTailrec()
+    ff
   }
 
   override def clone(): Grid = {
@@ -78,7 +181,7 @@ final class Grid(private val gs: GridSize,
 
   // count > 0: idx in [0, axisLen]
   // count < 0: idx in [0, axisLen - 1]
-  def validAddOrRemoveTileBand(band: TileBandKind, idx: Int, count: Int): Boolean = {
+  def checkAddOrRemoveTileBand(band: TileBandKind, idx: Int, count: Int): Boolean = {
     val isAdd = count >= 0
 
     // First outside row/column is a valid location to add more rows/columns.

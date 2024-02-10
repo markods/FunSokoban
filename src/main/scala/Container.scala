@@ -1,3 +1,5 @@
+import ActorKind.Player
+
 final class Container {
   private var mainFrame: MainFrame = _
   private var mainPanel: MainPanel = _
@@ -18,18 +20,19 @@ final class Container {
       } else {
         val index = (Math.random * Tile.values.length).toInt
         val tile = Tile.values.find(_.idx == index).get
-        grid.setTile(i, j, tile)
+        grid.setTile(i, j, if (!tile.isPlayer) tile else Tile.Floor)
       }
     }
-    val playerPosition = new GridPosition(5, 6)
-    grid.setTile(playerPosition.i, playerPosition.j, Tile.Player)
+    grid.setTile(5, 6, Tile.Player)
 
     val playerActionStack = new ActionStack[PlayerAction](PlayerAction.None)
-    val player = new Player(grid, playerPosition, playerActionStack)
-    
-    val editorPosition = new GridPosition(5, 6)
-    val editor = new Editor(grid, editorPosition)
-    gameState = new GameState(grid, player, editor)
+    val player = new Player(playerActionStack)
+    val editorActionStack = new ActionStack[GridChange](GridChangeNone)
+    val editor = new Editor(editorActionStack)
+
+    gameState = new GameState(player, editor)
+    gameState.setActiveActor(Player)
+    gameState.setGrid(grid)
 
     canvas = new Canvas(paintAssets, gameAssets, gameState)
     mainPanel = new MainPanel(canvas, gameAssets, gameState)

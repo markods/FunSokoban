@@ -7,7 +7,7 @@ final class PaintAssets {
   var gridMarginThickness = 20
   var mediumThickness = 2.0f
   var highThickness = 4.0f
-  var recenterPlayerThreshold = 20 /*percent*/
+  var recenterPlayerThreshold = 5 /*percent*/
 
   var mediumStroke = new BasicStroke(mediumThickness)
   var highStroke = new BasicStroke(highThickness)

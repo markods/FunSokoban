@@ -124,14 +124,16 @@ final class Canvas(private val paintAssets: PaintAssets,
 
     gameState.synchronized {
       val gridSize = gameState.grid.size
-      val focusedPosition = gameState.player.position
+      val actorPosition = gameState.actor.position
 
-      calculateGridOrigin(gridOrigin, paintAssets, canvasDim, gridSize, focusedPosition)
+      calculateGridOrigin(gridOrigin, paintAssets, canvasDim, gridSize, actorPosition)
 
       clearCanvas(g)
       drawTiles(g, gridOrigin, gridSize)
       drawGridLines(g, gridOrigin, gridSize)
-      drawFocusFrame(g, gridOrigin, focusedPosition)
+      if (gameState.actorKind == ActorKind.Editor) {
+        drawFocusFrame(g, gridOrigin, actorPosition)
+      }
       drawGridMargin(g, canvasDim)
       drawGridText(g, gridOrigin, gridSize)
     }

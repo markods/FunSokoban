@@ -1,8 +1,25 @@
-import scala.annotation.tailrec
+final class Player(private val undoStack: ActionStack[PlayerAction]) extends Actor {
+  private var grid: Grid = _
+  private val playerPos: GridPosition = new GridPosition(0, 0)
 
-final class Player(private val grid: Grid,
-                   private val playerPos: GridPosition,
-                   private val undoStack: ActionStack[PlayerAction]) {
+  def setGrid(grid: Grid): Boolean = {
+    this.grid = grid
+    this.playerPos.i = 0
+    this.playerPos.j = 0
+    undoStack.clear()
+
+    val playerPositionList = grid.findAll((i, j, tile) => tile.isPlayer)
+    if (playerPositionList.length != 1) {
+      return false
+    }
+
+    val playerPos = playerPositionList(0)
+    this.playerPos.i = playerPos.i
+    this.playerPos.j = playerPos.j
+
+    true
+  }
+
   def position: GridPosition = playerPos
 
   def moveNumber: Int = undoStack.size
@@ -14,7 +31,19 @@ final class Player(private val grid: Grid,
     undoStack.clear()
   }
 
-  def checkMove(wanted: PlayerAction): PlayerAction = {
+  def move(wanted: PlayerAction): Boolean = {
+    moveUnchecked(checkMove(wanted), UndoActionKind.Apply)
+  }
+
+  def undo(): Boolean = {
+    moveUnchecked(undoStack.undoAction(), UndoActionKind.Undo)
+  }
+
+  def redo(): Boolean = {
+    moveUnchecked(undoStack.redoAction(), UndoActionKind.Redo)
+  }
+
+  private def checkMove(wanted: PlayerAction): PlayerAction = {
     if (!wanted.isBasicMovement) {
       return PlayerAction.None
     }
@@ -48,7 +77,7 @@ final class Player(private val grid: Grid,
     wanted.promoteToBoxAction
   }
 
-  def moveUnchecked(checked: PlayerAction, actionKind: UndoActionKind): Boolean = {
+  private def moveUnchecked(checked: PlayerAction, actionKind: UndoActionKind): Boolean = {
     val tilesToMove = checked.tilesToMove
     if (tilesToMove == 0) {
       return false
@@ -96,33 +125,5 @@ final class Player(private val grid: Grid,
       undoStack.applyAction(checked)
     }
     true
-  }
-
-  def move(wanted: PlayerAction): Boolean = {
-    moveUnchecked(checkMove(wanted), UndoActionKind.Apply)
-  }
-
-  def undo(): Boolean = {
-    moveUnchecked(undoStack.undoAction(), UndoActionKind.Undo)
-  }
-
-  def redo(): Boolean = {
-    moveUnchecked(undoStack.redoAction(), UndoActionKind.Redo)
-  }
-
-  // - for undo, + for redo
-  def undoRedo(moveNumber: Int): Int = {
-    @tailrec
-    def undoRedoTail(moveNumber: Int, completedMoves: Int): Int = {
-      if (moveNumber < 0 && undo()) {
-        return undoRedoTail(moveNumber + 1, completedMoves + 1)
-      }
-      else if (moveNumber > 0 && redo()) {
-        return undoRedoTail(moveNumber - 1, completedMoves + 1)
-      }
-      completedMoves
-    }
-
-    undoRedoTail(moveNumber, 0)
   }
 }

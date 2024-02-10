@@ -117,8 +117,69 @@ final class MainPanel(private val jCanvas: Canvas,
     jPlay_InfoTextArea.setFocusable(false)
     val jPlay_PanelLayout = new GroupLayout(jPlay_Panel)
     jPlay_Panel.setLayout(jPlay_PanelLayout)
-    jPlay_PanelLayout.setHorizontalGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(jPlay_PanelLayout.createSequentialGroup.addContainerGap().addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(jPlay_PanelLayout.createSequentialGroup.addComponent(jPlay_LevelLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(jPlay_LevelComboBox, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue)).addGroup(jPlay_PanelLayout.createSequentialGroup.addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false).addComponent(jPlay_MovesLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue).addComponent(jPlay_TimeLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 38, Short.MaxValue)).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(jPlay_PanelLayout.createSequentialGroup.addComponent(jPlay_TimeTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(jPlay_RestartButton)).addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPlay_PanelLayout.createSequentialGroup.addComponent(jPlay_UndoMultipleMovesButton).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(jPlay_UndoMoveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(jPlay_MovesTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(jPlay_RedoMoveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(jPlay_RedoMultipleMovesButton))).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(jPlay_ImportButton).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue).addComponent(jPlay_SolveButton))).addContainerGap()).addComponent(jPlay_InfoTextArea))
-    jPlay_PanelLayout.setVerticalGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(jPlay_PanelLayout.createSequentialGroup.addContainerGap().addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(jPlay_LevelLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jPlay_LevelComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED).addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(jPlay_MovesLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jPlay_UndoMultipleMovesButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jPlay_UndoMoveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jPlay_MovesTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jPlay_RedoMoveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jPlay_RedoMultipleMovesButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE).addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE).addComponent(jPlay_ImportButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jPlay_SolveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE))).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED).addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(jPlay_TimeLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jPlay_TimeTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jPlay_RestartButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED).addComponent(jPlay_InfoTextArea, javax.swing.GroupLayout.DEFAULT_SIZE, 418, Short.MaxValue)))
+    jPlay_PanelLayout.setHorizontalGroup(
+      jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        .addGroup(jPlay_PanelLayout.createSequentialGroup()
+          .addContainerGap()
+          .addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPlay_PanelLayout.createSequentialGroup()
+              .addComponent(jPlay_LevelLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
+              .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+              .addComponent(jPlay_LevelComboBox, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue))
+            .addGroup(jPlay_PanelLayout.createSequentialGroup()
+              .addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                .addComponent(jPlay_MovesLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue)
+                .addComponent(jPlay_TimeLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 38, Short.MaxValue))
+              .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+              .addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPlay_PanelLayout.createSequentialGroup()
+                  .addComponent(jPlay_UndoMultipleMovesButton)
+                  .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                  .addComponent(jPlay_UndoMoveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE)
+                  .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                  .addComponent(jPlay_MovesTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE)
+                  .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                  .addComponent(jPlay_RedoMoveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE)
+                  .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                  .addComponent(jPlay_RedoMultipleMovesButton)
+                  .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                  .addComponent(jPlay_ImportButton)
+                  .addGap(18, 18, 18))
+                .addGroup(jPlay_PanelLayout.createSequentialGroup()
+                  .addComponent(jPlay_TimeTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                  .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                  .addComponent(jPlay_RestartButton)
+                  .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue)))
+              .addComponent(jPlay_SolveButton)))
+          .addContainerGap())
+        .addComponent(jPlay_InfoTextArea)
+    )
+    jPlay_PanelLayout.setVerticalGroup(
+      jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        .addGroup(jPlay_PanelLayout.createSequentialGroup()
+          .addContainerGap()
+          .addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jPlay_LevelLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jPlay_LevelComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE))
+          .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+          .addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jPlay_MovesLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jPlay_UndoMultipleMovesButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jPlay_UndoMoveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jPlay_MovesTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+              .addComponent(jPlay_ImportButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
+              .addComponent(jPlay_SolveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
+              .addComponent(jPlay_RedoMultipleMovesButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
+              .addComponent(jPlay_RedoMoveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)))
+          .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+          .addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jPlay_TimeLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jPlay_TimeTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jPlay_RestartButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE))
+          .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+          .addComponent(jPlay_InfoTextArea, javax.swing.GroupLayout.DEFAULT_SIZE, 418, Short.MaxValue))
+    )
     jTabbedPane.addTab("Play", jPlay_Panel)
     jCreate_LevelLabel.setText("Level")
     jCreate_LevelComboBox.setModel(new DefaultComboBoxModel[String](Array[String]("----- new level -----")))
@@ -212,8 +273,82 @@ final class MainPanel(private val jCanvas: Canvas,
     jCreate_CommandTextScrollPane.setViewportView(jCreate_CommandTextArea)
     val jCreate_PanelLayout = new GroupLayout(jCreate_Panel)
     jCreate_Panel.setLayout(jCreate_PanelLayout)
-    jCreate_PanelLayout.setHorizontalGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(jCreate_CommandHistoryScrollPane, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 418, Short.MaxValue).addComponent(jCreate_CommandTextScrollPane).addGroup(jCreate_PanelLayout.createSequentialGroup.addContainerGap().addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(jCreate_PanelLayout.createSequentialGroup.addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jCreate_PanelLayout.createSequentialGroup.addComponent(jCreate_LevelLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(jCreate_LevelComboBox, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue)).addGroup(jCreate_PanelLayout.createSequentialGroup.addComponent(jCreate_NameLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(jCreate_NameTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue)).addGroup(jCreate_PanelLayout.createSequentialGroup.addComponent(jCreate_StatusLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(jCreate_StatusTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue))).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false).addComponent(jCreate_SaveButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue).addComponent(jCreate_DeleteButton, javax.swing.GroupLayout.DEFAULT_SIZE, 75, Short.MaxValue).addComponent(jCreate_ImportButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue))).addGroup(jCreate_PanelLayout.createSequentialGroup.addGap(44, 44, 44).addComponent(jCreate_SetFloorButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(jCreate_SetWallButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(jCreate_SetBoxButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(jCreate_SetGoalButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(jCreate_SetPlayerButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue).addComponent(jCreate_SetBoxGoalButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(jCreate_SetPlayerGoalButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))).addContainerGap()))
-    jCreate_PanelLayout.setVerticalGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jCreate_PanelLayout.createSequentialGroup.addContainerGap().addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false).addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE).addComponent(jCreate_LevelComboBox).addComponent(jCreate_DeleteButton)).addComponent(jCreate_LevelLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue)).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED).addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE).addComponent(jCreate_ImportButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jCreate_StatusTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jCreate_StatusLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)).addGap(12, 12, 12).addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE).addComponent(jCreate_SaveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jCreate_NameTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jCreate_NameLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)).addGap(18, 18, 18).addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(jCreate_SetFloorButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jCreate_SetWallButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jCreate_SetBoxButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jCreate_SetGoalButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jCreate_SetBoxGoalButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jCreate_SetPlayerButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(jCreate_SetPlayerGoalButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)).addGap(18, 18, 18).addComponent(jCreate_CommandHistoryScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 246, Short.MaxValue).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(jCreate_CommandTextScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE)))
+    jCreate_PanelLayout.setHorizontalGroup(
+      jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        .addComponent(jCreate_CommandHistoryScrollPane, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 418, Short.MaxValue)
+        .addComponent(jCreate_CommandTextScrollPane)
+        .addGroup(jCreate_PanelLayout.createSequentialGroup()
+          .addContainerGap()
+          .addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jCreate_PanelLayout.createSequentialGroup()
+              .addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jCreate_PanelLayout.createSequentialGroup()
+                  .addComponent(jCreate_LevelLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
+                  .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                  .addComponent(jCreate_LevelComboBox, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue))
+                .addGroup(jCreate_PanelLayout.createSequentialGroup()
+                  .addComponent(jCreate_NameLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
+                  .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                  .addComponent(jCreate_NameTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue))
+                .addGroup(jCreate_PanelLayout.createSequentialGroup()
+                  .addComponent(jCreate_StatusLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
+                  .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                  .addComponent(jCreate_StatusTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue)))
+              .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+              .addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                .addComponent(jCreate_SaveButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue)
+                .addComponent(jCreate_DeleteButton, javax.swing.GroupLayout.DEFAULT_SIZE, 75, Short.MaxValue)
+                .addComponent(jCreate_ImportButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue)))
+            .addGroup(jCreate_PanelLayout.createSequentialGroup()
+              .addGap(44, 44, 44)
+              .addComponent(jCreate_SetFloorButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+              .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+              .addComponent(jCreate_SetWallButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+              .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+              .addComponent(jCreate_SetBoxButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+              .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+              .addComponent(jCreate_SetGoalButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+              .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+              .addComponent(jCreate_SetPlayerButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+              .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue)
+              .addComponent(jCreate_SetBoxGoalButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+              .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+              .addComponent(jCreate_SetPlayerGoalButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+          .addContainerGap())
+    )
+    jCreate_PanelLayout.setVerticalGroup(
+      jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jCreate_PanelLayout.createSequentialGroup()
+          .addContainerGap()
+          .addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+            .addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+              .addComponent(jCreate_LevelComboBox)
+              .addComponent(jCreate_DeleteButton))
+            .addComponent(jCreate_LevelLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue))
+          .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+          .addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+            .addComponent(jCreate_ImportButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jCreate_StatusTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jCreate_StatusLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE))
+          .addGap(12, 12, 12)
+          .addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+            .addComponent(jCreate_SaveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jCreate_NameTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jCreate_NameLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE))
+          .addGap(18, 18, 18)
+          .addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jCreate_SetFloorButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jCreate_SetWallButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jCreate_SetBoxButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jCreate_SetGoalButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jCreate_SetBoxGoalButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jCreate_SetPlayerButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jCreate_SetPlayerGoalButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+          .addGap(18, 18, 18)
+          .addComponent(jCreate_CommandHistoryScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 246, Short.MaxValue)
+          .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+          .addComponent(jCreate_CommandTextScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE))
+    )
     jTabbedPane.addTab("Create", jCreate_Panel)
     jCanvasSeparator.setOrientation(javax.swing.SwingConstants.VERTICAL)
     val jCanvasLayout = new GroupLayout(jCanvas)
@@ -222,16 +357,40 @@ final class MainPanel(private val jCanvas: Canvas,
     jCanvasLayout.setVerticalGroup(jCanvasLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGap(0, 0, Short.MaxValue))
     val layout = new GroupLayout(this)
     this.setLayout(layout)
-    layout.setHorizontalGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup.addComponent(jTabbedPane, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(jCanvasSeparator, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(jCanvas, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue)))
-    layout.setVerticalGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(jCanvas, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue).addComponent(jTabbedPane).addComponent(jCanvasSeparator))
+    layout.setHorizontalGroup(
+      layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+          .addComponent(jTabbedPane, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+          .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+          .addComponent(jCanvasSeparator, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+          .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+          .addComponent(jCanvas, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue))
+    )
+    layout.setVerticalGroup(
+      layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        .addComponent(jCanvas, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue)
+        .addComponent(jTabbedPane)
+        .addComponent(jCanvasSeparator)
+    )
   }
 
   private def TabbedPaneStateChanged(evt: ChangeEvent): Unit = {
     jTabbedPane.getSelectedIndex match {
       case 0 =>
-        gameTimer.start()
+        gameState.synchronized {
+          gameState.setActiveActor(ActorKind.Player)
+          gameState.setGrid(gameState.grid)
+        }
+        gameTimer.restart()
+        jPlay_MovesTextField.setText("0")
+        jCanvas.repaint()
       case 1 =>
+        gameState.synchronized {
+          gameState.setActiveActor(ActorKind.Editor)
+          gameState.setGrid(gameState.grid)
+        }
         gameTimer.stop()
+        jCanvas.repaint()
       case _ =>
     }
   }
@@ -243,10 +402,10 @@ final class MainPanel(private val jCanvas: Canvas,
   private def Play_UndoRedoMovesButtonsActionPerformed(evt: ActionEvent, moves: Int): Unit = {
     var completedMoves = 0
     gameState.synchronized {
-      completedMoves = gameState.player.undoRedo(moves)
+      completedMoves = gameState.actor.undoRedo(moves)
     }
     if (completedMoves > 0) {
-      jPlay_MovesTextField.setText(gameState.player.moveNumber.toString)
+      jPlay_MovesTextField.setText(gameState.actor.moveNumber.toString)
       jCanvas.repaint()
     }
   }
@@ -262,44 +421,36 @@ final class MainPanel(private val jCanvas: Canvas,
   private def Play_RestartButtonActionPerformed(evt: ActionEvent): Unit = {
     gameState.synchronized {
       // TODO
-      gameState.player.setPositionUnchecked(5, 6)
     }
     gameTimer.restart()
-    jPlay_MovesTextField.setText(gameState.player.moveNumber.toString)
+    jPlay_MovesTextField.setText(gameState.actor.moveNumber.toString)
   }
 
   private def CanvasPanelKeyPressed(evt: KeyEvent): Unit = {
     val keyStroke = KeyStroke.getKeyStroke(evt.getKeyCode, evt.getModifiersEx)
+    val keyCombo = KeyCombo.toKeyCombo(keyStroke)
     var canvasChanged = false
 
-    // TODO: cleanup this code
     // TODO: don't do setText/timer start when we're not in the play tab
-    if (KeyCombo.Up.keyStroke.equals(keyStroke)) gameState.synchronized {
-      canvasChanged = gameState.player.move(PlayerAction.PlayerUp)
-      jPlay_MovesTextField.setText(gameState.player.moveNumber.toString)
+    gameState.synchronized {
+      keyCombo match {
+        case KeyCombo.Up | KeyCombo.Down | KeyCombo.Left | KeyCombo.Right =>
+          val playerAction = keyCombo match {
+            case KeyCombo.Up => PlayerAction.PlayerUp
+            case KeyCombo.Down => PlayerAction.PlayerDown
+            case KeyCombo.Left => PlayerAction.PlayerLeft
+            case KeyCombo.Right => PlayerAction.PlayerRight
+            case _ => PlayerAction.None
+          }
+          canvasChanged = gameState.actor.move(playerAction)
+        case KeyCombo.CtrlZ =>
+          canvasChanged = gameState.actor.undo()
+        case KeyCombo.CtrlY =>
+          canvasChanged = gameState.actor.redo()
+        case _ =>
+      }
     }
-    else if (KeyCombo.Down.keyStroke.equals(keyStroke)) gameState.synchronized {
-      canvasChanged = gameState.player.move(PlayerAction.PlayerDown)
-      jPlay_MovesTextField.setText(gameState.player.moveNumber.toString)
-    }
-    else if (KeyCombo.Left.keyStroke.equals(keyStroke)) gameState.synchronized {
-      canvasChanged = gameState.player.move(PlayerAction.PlayerLeft)
-      jPlay_MovesTextField.setText(gameState.player.moveNumber.toString)
-    }
-    else if (KeyCombo.Right.keyStroke.equals(keyStroke)) gameState.synchronized {
-      canvasChanged = gameState.player.move(PlayerAction.PlayerRight)
-      jPlay_MovesTextField.setText(gameState.player.moveNumber.toString)
-    }
-    else if (KeyCombo.CtrlZ.keyStroke.equals(keyStroke)) gameState.synchronized {
-      canvasChanged = gameState.player.undo()
-      jPlay_MovesTextField.setText(gameState.player.moveNumber.toString)
-    }
-    else if (KeyCombo.CtrlY.keyStroke.equals(keyStroke)) gameState.synchronized {
-      canvasChanged = gameState.player.redo()
-      jPlay_MovesTextField.setText(gameState.player.moveNumber.toString)
-    }
-    else return
-
+    jPlay_MovesTextField.setText(gameState.actor.moveNumber.toString)
     if (canvasChanged) {
       jCanvas.repaint()
     }
@@ -324,7 +475,7 @@ final class MainPanel(private val jCanvas: Canvas,
   private def Create_SetTileButtonsActionPerformed(evt: ActionEvent, tile: Tile): Unit = {
     // TODO: add editor undo action
     gameState.synchronized {
-      gameState.grid.setTile(gameState.player.position.i, gameState.player.position.j, tile)
+      gameState.grid.setTile(gameState.actor.position.i, gameState.actor.position.j, tile)
     }
     jCanvas.repaint()
   }

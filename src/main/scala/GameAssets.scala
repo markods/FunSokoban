@@ -2,7 +2,7 @@ import java.awt.Dimension
 import java.util.logging.{Level, Logger}
 import javax.swing.ImageIcon
 
-object GameAssets {
+private object GameAssets {
   private val logger = Logger.getLogger(getClass.getName)
 }
 
@@ -10,7 +10,7 @@ final class GameAssets {
   private val tilePath = new Array[String](Tile.values.length)
   private val tileIconMap = new Array[ImageIcon](Tile.values.length)
   private val tileDimension = new Dimension(0, 0)
-  private val initialCommandHistoryText = "// Keys\n// ------------------------\n// Ctrl+z, Ctrl+y - undo, redo\n// enter - input command\n// arrow keys - move selection\n\n\n// Predefined commands\n// ------------------------\n// Parameters:\n// - num: number\n// - tile: can be \"floor\", \"wall\", \"box\", \"goal\", \"player\", \"boxOnGoal\", \"playerOnGoal\".\n// - pos: position x:y.\n// - ident: identifier.\n// - type: can be Num, Pos, Tile, Ident.\n\nrow_extend(iBetween: Num, count: Num)\ncol_extend(jBetween: Num, count: Num)\nrow_delete(i: Num, count: Num)\ncol_delete(i: Num, count: Num)\ntile_set(pos: Pos, tile: Tile)\n\nbox_goal_swap()\nwall_minimize(pos: Pos)\nwall_clear(pos: Pos, circumference: Num)\nwall_fractalize(pos: Pos)\nlevel_validate()\nundef(name: Ident)\n\n\n// Definable commands\n// ------------------\n\n// Function - commands are executed in order until one fails, considered success if at least one succeeds.\nfn foo(pos1: Pos, pos2: Pos, n: Num) = tile_set(\"wall\", pos1) wall_fractalize(pos1) wall_filter(pos2, n)\n\n// Transaction - commands are executed in order and either all succeed or none do.\ntn bar(t, Tile, pos1: Pos) = tile_set(t, pos1) wall_fractalize(pos1) level_validate()\n\n\n// Commands\n// ------------------"
+  private val initialCommandHistoryText = "// Keys\n// ------------------------\n// Ctrl+z, Ctrl+y - undo, redo\n// enter - input command\n// arrow keys - move selection\n\n\n// Predefined commands\n// ------------------------\n// Parameters:\n// - num: number\n// - tile: can be \"floor\", \"wall\", \"box\", \"goal\", \"player\", \"boxOnGoal\", \"playerOnGoal\".\n// - pos: position x:y.\n// - ident: identifier.\n// - type: can be Num, Pos, Tile, Ident.\n\nrow_extend(iBetween: Num, count: Num)\ncol_extend(jBetween: Num, count: Num)\nrow_delete(i: Num, count: Num)\ncol_delete(i: Num, count: Num)\ntile_set(pos: Pos, tile: Tile)\n\nbox_goal_invert()\nwall_minimize()\nwall_clear(pos: Pos, circumference: Num)\nwall_fractalize(pos: Pos, origin: Pos)\nlevel_validate()\nundef(name: Ident)\n\n\n// Definable commands\n// ------------------\n\n// Function - commands are executed in order until one fails, considered success if at least one succeeds.\nfn foo(pos1: Pos, pos2: Pos, n: Num) = tile_set(\"wall\", pos1) wall_fractalize(pos1) wall_filter(pos2, n)\n\n// Transaction - commands are executed in order and either all succeed or none do.\ntn bar(t, Tile, pos1: Pos) = tile_set(t, pos1) wall_fractalize(pos1) level_validate()\n\n\n// Commands\n// ------------------"
   configure()
 
   def configure(): Unit = {
