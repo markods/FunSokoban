@@ -1,21 +1,24 @@
 final class Player(private val undoStack: ActionStack[PlayerAction]) extends Actor {
   private var grid: Grid = _
   private val playerPos: GridPosition = new GridPosition(0, 0)
+  private var exists: Boolean = false
 
   def setGrid(grid: Grid): Boolean = {
     this.grid = grid
-    this.playerPos.i = 0
-    this.playerPos.j = 0
+    this.playerPos.i = (grid.size.m - 1) / 2
+    this.playerPos.j = (grid.size.n - 1) / 2
     undoStack.clear()
 
     val playerPositionList = grid.findAll((i, j, tile) => tile.isPlayer)
     if (playerPositionList.length != 1) {
+      exists = false
       return false
     }
 
     val playerPos = playerPositionList(0)
     this.playerPos.i = playerPos.i
     this.playerPos.j = playerPos.j
+    exists = true
 
     true
   }
@@ -44,7 +47,10 @@ final class Player(private val undoStack: ActionStack[PlayerAction]) extends Act
   }
 
   private def checkMove(wanted: PlayerAction): PlayerAction = {
-    if (!wanted.isBasicMovement) {
+    if (!exists || !wanted.isBasicMovement) {
+      return PlayerAction.None
+    }
+    if (!grid.validPosition(playerPos.i, playerPos.j)) {
       return PlayerAction.None
     }
 
@@ -122,7 +128,7 @@ final class Player(private val undoStack: ActionStack[PlayerAction]) extends Act
     playerPos.i += (if (!isUndo) dY else -dY)
     playerPos.j += (if (!isUndo) dX else -dX)
     if (actionKind eq UndoActionKind.Apply) {
-      undoStack.applyAction(checked)
+      undoStack.addAction(checked)
     }
     true
   }

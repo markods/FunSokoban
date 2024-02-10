@@ -60,7 +60,7 @@ object FileUtil {
     }
   }
 
-  def listFilesInDirectory(directoryPath: String): List[String] = {
+  def listFilesInDirectory(directoryPath: String): List[Path] = {
     val path = Paths.get(directoryPath)
     if (!Files.exists(path) || !Files.isDirectory(path)) {
       return Nil
@@ -70,7 +70,6 @@ object FileUtil {
       val stream = Files.walk(path, FileVisitOption.FOLLOW_LINKS)
       val files = stream.iterator().asScala
         .filter(Files.isRegularFile(_))
-        .map(_.toString)
         .toList
       files
     } catch {

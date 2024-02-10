@@ -9,7 +9,7 @@ final class ActionStack[T](private val noneAction: T) {
 
   def foreach[U](f: T => U): Unit = actionStack.foreach(f)
 
-  def applyAction(action: T): Unit = {
+  def addAction(action: T): Unit = {
     if (noneAction == action) {
       return
     }

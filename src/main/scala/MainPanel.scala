@@ -1,16 +1,18 @@
 import java.awt.event.{ActionEvent, ActionListener, KeyAdapter, KeyEvent}
 import java.awt.{Dimension, Insets, KeyboardFocusManager}
 import javax.swing.*
-import javax.swing.event.{ChangeEvent, ChangeListener}
+import javax.swing.event.{ChangeEvent, ChangeListener, PopupMenuEvent, PopupMenuListener}
 
 final class MainPanel(private val jCanvas: Canvas,
                       private val gameAssets: GameAssets,
-                      private val gameState: GameState) extends JPanel {
+                      private val gameState: GameState,
+                      private val editorUndoStack: ActionStack[GridChange]) extends JPanel {
   private val jTabbedPane: JTabbedPane = new JTabbedPane
 
   private val jPlay_Panel: JPanel = new JPanel
   private val jPlay_LevelLabel: JLabel = new JLabel
-  private val jPlay_LevelComboBox: JComboBox[String] = new JComboBox[String]
+  private val jPlay_LevelComboBoxModel: DefaultComboBoxModel[GameLevel] = new DefaultComboBoxModel[GameLevel]()
+  private val jPlay_LevelComboBox: JComboBox[GameLevel] = new JComboBox[GameLevel]
   private val jPlay_MovesLabel: JLabel = new JLabel
   private val jPlay_UndoMultipleMovesButton: JButton = new JButton
   private val jPlay_UndoMoveButton: JButton = new JButton
@@ -26,7 +28,8 @@ final class MainPanel(private val jCanvas: Canvas,
 
   private val jCreate_Panel: JPanel = new JPanel
   private val jCreate_LevelLabel: JLabel = new JLabel
-  private val jCreate_LevelComboBox: JComboBox[String] = new JComboBox[String]
+  private val jCreate_LevelComboBoxModel: DefaultComboBoxModel[GameLevel] = new DefaultComboBoxModel[GameLevel]()
+  private val jCreate_LevelComboBox: JComboBox[GameLevel] = new JComboBox[GameLevel]
   private val jCreate_DeleteButton: JButton = new JButton
   private val jCreate_StatusLabel: JLabel = new JLabel
   private val jCreate_StatusTextField: JTextField = new JTextField
@@ -50,32 +53,32 @@ final class MainPanel(private val jCanvas: Canvas,
   /*private val jCanvas: JCanvas = new Canvas(...)*/
 
   private val gameTimer: GameTimer = new GameTimer(
-    () => jPlay_TimeTextField.setText("00:00:00"),
+    () => jPlay_TimeTextField.setText(gameAssets.zeroTimeString),
     () => jPlay_TimeTextField.setText(gameTimer.currentTime()),
-    () => jPlay_TimeTextField.setText("00:00:00")
+    () => jPlay_TimeTextField.setText(gameAssets.zeroTimeString)
   )
 
   configure()
 
   private def configure(): Unit = {
     jTabbedPane.setTabLayoutPolicy(javax.swing.JTabbedPane.SCROLL_TAB_LAYOUT)
-    jTabbedPane.addChangeListener((evt: ChangeEvent) => TabbedPaneStateChanged(evt))
+    jTabbedPane.addChangeListener((evt: ChangeEvent) => ChangeTab())
     val jCanvasKeyListener = new KeyAdapter() {
       override def keyPressed(evt: KeyEvent): Unit = {
         CanvasPanelKeyPressed(evt)
       }
     }
     jPlay_LevelLabel.setText("Level")
-    jPlay_LevelComboBox.setModel(new DefaultComboBoxModel[String](Array[String]("----- choose level -----")))
-    jPlay_LevelComboBox.addActionListener((evt: ActionEvent) => Play_LevelComboBoxActionPerformed(evt))
-    jPlay_LevelComboBox.addKeyListener(jCanvasKeyListener)
+    jPlay_LevelComboBoxModel.addElement(gameAssets.defaultLevel)
+    jPlay_LevelComboBox.setModel(jPlay_LevelComboBoxModel)
+    jPlay_LevelComboBox.addActionListener((evt: ActionEvent) => SelectLevelActionListener(jPlay_LevelComboBoxModel))
     jPlay_MovesLabel.setText("Moves")
     jPlay_UndoMultipleMovesButton.setText("<<")
     jPlay_UndoMultipleMovesButton.setMargin(new Insets(2, 5, 3, 5))
-    jPlay_UndoMultipleMovesButton.addActionListener((evt: ActionEvent) => Play_UndoRedoMovesButtonsActionPerformed(evt, -10))
+    jPlay_UndoMultipleMovesButton.addActionListener((evt: ActionEvent) => Play_UndoRedoMoves(-10))
     jPlay_UndoMultipleMovesButton.addKeyListener(jCanvasKeyListener)
     jPlay_UndoMoveButton.setText("<")
-    jPlay_UndoMoveButton.addActionListener((evt: ActionEvent) => Play_UndoRedoMovesButtonsActionPerformed(evt, -1))
+    jPlay_UndoMoveButton.addActionListener((evt: ActionEvent) => Play_UndoRedoMoves(-1))
     jPlay_UndoMoveButton.addKeyListener(jCanvasKeyListener)
     jPlay_MovesTextField.setEditable(false)
     jPlay_MovesTextField.setHorizontalAlignment(javax.swing.SwingConstants.CENTER)
@@ -84,17 +87,17 @@ final class MainPanel(private val jCanvas: Canvas,
     jPlay_MovesTextField.setMinimumSize(new Dimension(64, 32))
     jPlay_MovesTextField.setPreferredSize(new Dimension(64, 32))
     jPlay_RedoMoveButton.setText(">")
-    jPlay_RedoMoveButton.addActionListener((evt: ActionEvent) => Play_UndoRedoMovesButtonsActionPerformed(evt, 1))
+    jPlay_RedoMoveButton.addActionListener((evt: ActionEvent) => Play_UndoRedoMoves(1))
     jPlay_RedoMoveButton.addKeyListener(jCanvasKeyListener)
     jPlay_RedoMultipleMovesButton.setText(">>")
     jPlay_RedoMultipleMovesButton.setMargin(new Insets(2, 5, 3, 5))
-    jPlay_RedoMultipleMovesButton.addActionListener((evt: ActionEvent) => Play_UndoRedoMovesButtonsActionPerformed(evt, 10))
+    jPlay_RedoMultipleMovesButton.addActionListener((evt: ActionEvent) => Play_UndoRedoMoves(10))
     jPlay_RedoMultipleMovesButton.addKeyListener(jCanvasKeyListener)
     jPlay_ImportButton.setText("Import")
-    jPlay_ImportButton.addActionListener((evt: ActionEvent) => Play_ImportButtonActionPerformed(evt))
+    jPlay_ImportButton.addActionListener((evt: ActionEvent) => Play_ImportMoves())
     jPlay_ImportButton.addKeyListener(jCanvasKeyListener)
     jPlay_SolveButton.setText("Solve")
-    jPlay_SolveButton.addActionListener((evt: ActionEvent) => Play_SolveButtonActionPerformed(evt))
+    jPlay_SolveButton.addActionListener((evt: ActionEvent) => Play_SolveLevel())
     jPlay_SolveButton.addKeyListener(jCanvasKeyListener)
     jPlay_TimeLabel.setText("Time")
     jPlay_TimeTextField.setEditable(false)
@@ -104,7 +107,7 @@ final class MainPanel(private val jCanvas: Canvas,
     jPlay_TimeTextField.setMinimumSize(new Dimension(64, 32))
     jPlay_TimeTextField.setPreferredSize(new Dimension(64, 32))
     jPlay_RestartButton.setText("Restart")
-    jPlay_RestartButton.addActionListener((evt: ActionEvent) => Play_RestartButtonActionPerformed(evt))
+    jPlay_RestartButton.addActionListener((evt: ActionEvent) => Play_RestartLevel())
     jPlay_RestartButton.addKeyListener(jCanvasKeyListener)
     jPlay_InfoTextArea.setEditable(false)
     jPlay_InfoTextArea.setColumns(20)
@@ -182,12 +185,12 @@ final class MainPanel(private val jCanvas: Canvas,
     )
     jTabbedPane.addTab("Play", jPlay_Panel)
     jCreate_LevelLabel.setText("Level")
-    jCreate_LevelComboBox.setModel(new DefaultComboBoxModel[String](Array[String]("----- new level -----")))
-    jCreate_LevelComboBox.addActionListener((evt: ActionEvent) => Create_LevelComboBoxActionPerformed(evt))
-    jCreate_LevelComboBox.addKeyListener(jCanvasKeyListener)
+    jCreate_LevelComboBoxModel.addElement(gameAssets.defaultLevel)
+    jCreate_LevelComboBox.setModel(jCreate_LevelComboBoxModel)
+    jCreate_LevelComboBox.addActionListener((evt: ActionEvent) => SelectLevelActionListener(jCreate_LevelComboBoxModel))
     jCreate_DeleteButton.setText("Delete")
     jCreate_DeleteButton.setToolTipText("")
-    jCreate_DeleteButton.addActionListener((evt: ActionEvent) => Create_DeleteButtonActionPerformed(evt))
+    jCreate_DeleteButton.addActionListener((evt: ActionEvent) => Create_DeleteLevel())
     jCreate_DeleteButton.addKeyListener(jCanvasKeyListener)
     jCreate_StatusLabel.setText("Status")
     jCreate_StatusTextField.setEditable(false)
@@ -195,55 +198,55 @@ final class MainPanel(private val jCanvas: Canvas,
     jCreate_StatusTextField.setMinimumSize(new Dimension(64, 32))
     jCreate_StatusTextField.setPreferredSize(new Dimension(64, 32))
     jCreate_ImportButton.setText("Import")
-    jCreate_ImportButton.addActionListener((evt: ActionEvent) => Create_ImportButtonActionPerformed(evt))
+    jCreate_ImportButton.addActionListener((evt: ActionEvent) => Create_ImportLevel())
     jCreate_ImportButton.addKeyListener(jCanvasKeyListener)
     jCreate_NameLabel.setText("Name")
     jCreate_NameTextField.setMinimumSize(new Dimension(64, 32))
     jCreate_NameTextField.setPreferredSize(new Dimension(64, 32))
     jCreate_SaveButton.setText("Save")
-    jCreate_SaveButton.addActionListener((evt: ActionEvent) => Create_SaveButtonActionPerformed(evt))
+    jCreate_SaveButton.addActionListener((evt: ActionEvent) => Create_SaveLevel())
     jCreate_SaveButton.addKeyListener(jCanvasKeyListener)
     jCreate_SetFloorButton.setIcon(gameAssets.tileIcon(Tile.Floor))
     jCreate_SetFloorButton.setMaximumSize(new Dimension(42, 42))
     jCreate_SetFloorButton.setMinimumSize(new Dimension(42, 42))
     jCreate_SetFloorButton.setPreferredSize(new Dimension(42, 42))
-    jCreate_SetFloorButton.addActionListener((evt: ActionEvent) => Create_SetTileButtonsActionPerformed(evt, Tile.Floor))
+    jCreate_SetFloorButton.addActionListener((evt: ActionEvent) => Create_SetTile(Tile.Floor))
     jCreate_SetFloorButton.addKeyListener(jCanvasKeyListener)
     jCreate_SetWallButton.setIcon(gameAssets.tileIcon(Tile.Wall))
     jCreate_SetWallButton.setMaximumSize(new Dimension(42, 42))
     jCreate_SetWallButton.setMinimumSize(new Dimension(42, 42))
     jCreate_SetWallButton.setPreferredSize(new Dimension(42, 42))
-    jCreate_SetWallButton.addActionListener((evt: ActionEvent) => Create_SetTileButtonsActionPerformed(evt, Tile.Wall))
+    jCreate_SetWallButton.addActionListener((evt: ActionEvent) => Create_SetTile(Tile.Wall))
     jCreate_SetWallButton.addKeyListener(jCanvasKeyListener)
     jCreate_SetBoxButton.setIcon(gameAssets.tileIcon(Tile.Box))
     jCreate_SetBoxButton.setMaximumSize(new Dimension(42, 42))
     jCreate_SetBoxButton.setMinimumSize(new Dimension(42, 42))
     jCreate_SetBoxButton.setPreferredSize(new Dimension(42, 42))
-    jCreate_SetBoxButton.addActionListener((evt: ActionEvent) => Create_SetTileButtonsActionPerformed(evt, Tile.Box))
+    jCreate_SetBoxButton.addActionListener((evt: ActionEvent) => Create_SetTile(Tile.Box))
     jCreate_SetBoxButton.addKeyListener(jCanvasKeyListener)
     jCreate_SetGoalButton.setIcon(gameAssets.tileIcon(Tile.Goal))
     jCreate_SetGoalButton.setMaximumSize(new Dimension(42, 42))
     jCreate_SetGoalButton.setMinimumSize(new Dimension(42, 42))
     jCreate_SetGoalButton.setPreferredSize(new Dimension(42, 42))
-    jCreate_SetGoalButton.addActionListener((evt: ActionEvent) => Create_SetTileButtonsActionPerformed(evt, Tile.Goal))
+    jCreate_SetGoalButton.addActionListener((evt: ActionEvent) => Create_SetTile(Tile.Goal))
     jCreate_SetGoalButton.addKeyListener(jCanvasKeyListener)
     jCreate_SetPlayerButton.setIcon(gameAssets.tileIcon(Tile.Player))
     jCreate_SetPlayerButton.setMaximumSize(new Dimension(42, 42))
     jCreate_SetPlayerButton.setMinimumSize(new Dimension(42, 42))
     jCreate_SetPlayerButton.setPreferredSize(new Dimension(42, 42))
-    jCreate_SetPlayerButton.addActionListener((evt: ActionEvent) => Create_SetTileButtonsActionPerformed(evt, Tile.Player))
+    jCreate_SetPlayerButton.addActionListener((evt: ActionEvent) => Create_SetTile(Tile.Player))
     jCreate_SetPlayerButton.addKeyListener(jCanvasKeyListener)
     jCreate_SetBoxGoalButton.setIcon(gameAssets.tileIcon(Tile.BoxGoal))
     jCreate_SetBoxGoalButton.setMaximumSize(new Dimension(42, 42))
     jCreate_SetBoxGoalButton.setMinimumSize(new Dimension(42, 42))
     jCreate_SetBoxGoalButton.setPreferredSize(new Dimension(42, 42))
-    jCreate_SetBoxGoalButton.addActionListener((evt: ActionEvent) => Create_SetTileButtonsActionPerformed(evt, Tile.BoxGoal))
+    jCreate_SetBoxGoalButton.addActionListener((evt: ActionEvent) => Create_SetTile(Tile.BoxGoal))
     jCreate_SetBoxGoalButton.addKeyListener(jCanvasKeyListener)
     jCreate_SetPlayerGoalButton.setIcon(gameAssets.tileIcon(Tile.PlayerGoal))
     jCreate_SetPlayerGoalButton.setMaximumSize(new Dimension(42, 42))
     jCreate_SetPlayerGoalButton.setMinimumSize(new Dimension(42, 42))
     jCreate_SetPlayerGoalButton.setPreferredSize(new Dimension(42, 42))
-    jCreate_SetPlayerGoalButton.addActionListener((evt: ActionEvent) => Create_SetTileButtonsActionPerformed(evt, Tile.PlayerGoal))
+    jCreate_SetPlayerGoalButton.addActionListener((evt: ActionEvent) => Create_SetTile(Tile.PlayerGoal))
     jCreate_SetPlayerGoalButton.addKeyListener(jCanvasKeyListener)
     jCreate_CommandHistoryTextArea.setEditable(false)
     jCreate_CommandHistoryTextArea.setColumns(20)
@@ -267,7 +270,7 @@ final class MainPanel(private val jCanvas: Canvas,
     val jCreate_CommandTextAreaKeymap = jCreate_CommandTextArea.getKeymap
     jCreate_CommandTextAreaKeymap.addActionForKeyStroke(KeyCombo.Enter.keyStroke, new AbstractAction() {
       override def actionPerformed(evt: ActionEvent): Unit = {
-        Create_CommandTextAreaEnterTyped(evt)
+        Create_CommandTextAreaEnterTyped()
       }
     })
     jCreate_CommandTextScrollPane.setViewportView(jCreate_CommandTextArea)
@@ -374,64 +377,117 @@ final class MainPanel(private val jCanvas: Canvas,
     )
   }
 
-  private def TabbedPaneStateChanged(evt: ChangeEvent): Unit = {
-    jTabbedPane.getSelectedIndex match {
-      case 0 =>
-        gameState.synchronized {
-          gameState.setActiveActor(ActorKind.Player)
-          gameState.setGrid(gameState.grid)
-        }
-        gameTimer.restart()
-        jPlay_MovesTextField.setText("0")
-        jCanvas.repaint()
-      case 1 =>
-        gameState.synchronized {
-          gameState.setActiveActor(ActorKind.Editor)
-          gameState.setGrid(gameState.grid)
-        }
-        gameTimer.stop()
-        jCanvas.repaint()
-      case _ =>
+  private def ChangeTab(): Unit = {
+    var actorKind = ActorKind.Player
+
+    gameState.synchronized {
+      actorKind = jTabbedPane.getSelectedIndex match {
+        case 0 => ActorKind.Player
+        case 1 => ActorKind.Editor
+        case _ => gameState.actorKind
+      }
+      gameState.setActiveActor(actorKind)
+      gameState.setLevel(gameAssets.defaultLevel, new Grid(gameAssets.defaultGridSize, Tile.Floor))
+    }
+    jCanvas.repaint()
+    actorKind match {
+      case ActorKind.Player => SwingUtilities.invokeLater(() => PopulateLevelComboBox(jPlay_LevelComboBoxModel))
+      case ActorKind.Editor => SwingUtilities.invokeLater(() => PopulateLevelComboBox(jCreate_LevelComboBoxModel))
+    }
+
+    gameTimer.stop()
+    jPlay_MovesTextField.setText("0")
+    jPlay_TimeTextField.setText(gameAssets.zeroTimeString)
+  }
+
+  private def ClearLevelComboBox(model: DefaultComboBoxModel[GameLevel]): Unit = {
+    val firstElem: GameLevel = model.getElementAt(0)
+    model.removeAllElements()
+    model.addElement(firstElem)
+  }
+
+  private def PopulateLevelComboBox(model: DefaultComboBoxModel[GameLevel]): Unit = {
+    ClearLevelComboBox(model)
+
+    val pathList = FileUtil.listFilesInDirectory(gameAssets.levelRootPath)
+    if (pathList.isEmpty) {
+      return
+    }
+
+    for (path <- pathList) {
+      // Good enough for this purpose. Better extension stripping should be done.
+      val levelName = path.getFileName.toString.takeWhile(_ != '.')
+      model.addElement(GameLevel(levelName, path))
     }
   }
 
-  private def Play_LevelComboBoxActionPerformed(evt: ActionEvent): Unit = {
-    // TODO
+  private def SelectLevelActionListener(model: DefaultComboBoxModel[GameLevel]): Unit = {
+    val level = model.getSelectedItem.asInstanceOf[GameLevel]
+    SelectLevel(level)
   }
 
-  private def Play_UndoRedoMovesButtonsActionPerformed(evt: ActionEvent, moves: Int): Unit = {
+  private def SelectLevel(level: GameLevel): Unit = {
+    var grid: Option[Grid] = Option.empty
+
+    if (level != null && level != gameAssets.defaultLevel) {
+      val fileContents = FileUtil.readFromFile(level.path.toString)
+      if (fileContents != null) {
+        val gridSerializer = new GridSerializer()
+        val deserializedGrid = gridSerializer.toObject(fileContents.get)
+        if (deserializedGrid.isDefined) {
+          grid = Option(deserializedGrid.get)
+        }
+      }
+    }
+
+    if (grid.isEmpty) {
+      grid = Option(new Grid(gameAssets.defaultGridSize, Tile.Floor))
+      gameTimer.stop()
+    }
+    else {
+      gameTimer.restart()
+    }
+
+    gameState.synchronized {
+      gameState.setLevel(level, grid.get)
+    }
+    jCanvas.repaint()
+    jPlay_MovesTextField.setText("0")
+  }
+
+  private def Play_UndoRedoMoves(moves: Int): Unit = {
     var completedMoves = 0
+    var moveNumber = 0
     gameState.synchronized {
       completedMoves = gameState.actor.undoRedo(moves)
+      moveNumber = gameState.actor.moveNumber
     }
     if (completedMoves > 0) {
-      jPlay_MovesTextField.setText(gameState.actor.moveNumber.toString)
+      jPlay_MovesTextField.setText(moveNumber.toString)
       jCanvas.repaint()
     }
   }
 
-  private def Play_ImportButtonActionPerformed(evt: ActionEvent): Unit = {
+  private def Play_ImportMoves(): Unit = {
     // TODO
   }
 
-  private def Play_SolveButtonActionPerformed(evt: ActionEvent): Unit = {
+  private def Play_SolveLevel(): Unit = {
     // TODO
   }
 
-  private def Play_RestartButtonActionPerformed(evt: ActionEvent): Unit = {
+  private def Play_RestartLevel(): Unit = {
     gameState.synchronized {
-      // TODO
+      SelectLevel(gameState.level)
     }
-    gameTimer.restart()
-    jPlay_MovesTextField.setText(gameState.actor.moveNumber.toString)
   }
 
   private def CanvasPanelKeyPressed(evt: KeyEvent): Unit = {
     val keyStroke = KeyStroke.getKeyStroke(evt.getKeyCode, evt.getModifiersEx)
     val keyCombo = KeyCombo.toKeyCombo(keyStroke)
     var canvasChanged = false
+    var moveNumber = 0
 
-    // TODO: don't do setText/timer start when we're not in the play tab
     gameState.synchronized {
       keyCombo match {
         case KeyCombo.Up | KeyCombo.Down | KeyCombo.Left | KeyCombo.Right =>
@@ -449,38 +505,38 @@ final class MainPanel(private val jCanvas: Canvas,
           canvasChanged = gameState.actor.redo()
         case _ =>
       }
+      moveNumber = gameState.actor.moveNumber
     }
-    jPlay_MovesTextField.setText(gameState.actor.moveNumber.toString)
+    jPlay_MovesTextField.setText(moveNumber.toString)
     if (canvasChanged) {
       jCanvas.repaint()
     }
   }
 
-  private def Create_LevelComboBoxActionPerformed(evt: ActionEvent): Unit = {
+  private def Create_DeleteLevel(): Unit = {
     // TODO
   }
 
-  private def Create_DeleteButtonActionPerformed(evt: ActionEvent): Unit = {
+  private def Create_ImportLevel(): Unit = {
     // TODO
   }
 
-  private def Create_ImportButtonActionPerformed(evt: ActionEvent): Unit = {
-    // TODO
+  private def Create_SaveLevel(): Unit = {
+    // TODO: check that the level name isn't the default level name; only contains alphanumeric chars + _; append .txt to it when saving
   }
 
-  private def Create_SaveButtonActionPerformed(evt: ActionEvent): Unit = {
-    // TODO
-  }
-
-  private def Create_SetTileButtonsActionPerformed(evt: ActionEvent, tile: Tile): Unit = {
-    // TODO: add editor undo action
+  private def Create_SetTile(tile: Tile): Unit = {
     gameState.synchronized {
-      gameState.grid.setTile(gameState.actor.position.i, gameState.actor.position.j, tile)
+      val editor = gameState.actor.asInstanceOf[Editor]
+      if (!editor.checkSetTile(editor.position, tile)) {
+        return
+      }
+      editor.apply(editor.setTileUnchecked(editor.position, tile))
     }
     jCanvas.repaint()
   }
 
-  private def Create_CommandTextAreaEnterTyped(evt: ActionEvent): Unit = {
+  private def Create_CommandTextAreaEnterTyped(): Unit = {
     try {
       val text = jCreate_CommandTextArea.getText()
       jCreate_CommandTextArea.setText("")

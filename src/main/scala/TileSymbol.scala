@@ -13,11 +13,11 @@ object TileSymbol {
   def toTile(tileSymbol: Char): Tile = tileSymbol match {
     case '-' => Tile.Floor
     case '#' => Tile.Wall
-    case 'X' => Tile.Box
+    case 'x' | 'X' => Tile.Box
     case '.' => Tile.Goal
-    case 'O' => Tile.BoxGoal
-    case 'S' => Tile.Player
-    case 'T' => Tile.PlayerGoal
+    case 'o' | 'O' => Tile.BoxGoal
+    case 's' | 'S' => Tile.Player
+    case 't' | 'T' => Tile.PlayerGoal
     case _ => throw new IllegalArgumentException("Invalid tile.")
   }
 }

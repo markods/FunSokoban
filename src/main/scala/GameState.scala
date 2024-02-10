@@ -1,11 +1,15 @@
 final class GameState(private val player: Player,
                       private val editor: Editor) {
   private var currGrid: Grid = _
+  private var currLevel: GameLevel = _
   private var selectedActorKind: ActorKind = ActorKind.Player
+
+  def level: GameLevel = currLevel
 
   def grid: Grid = currGrid
 
-  def setGrid(grid: Grid): Boolean = {
+  def setLevel(level: GameLevel, grid: Grid): Boolean = {
+    currLevel = level
     currGrid = grid
     actor.setGrid(grid)
   }
@@ -15,7 +19,9 @@ final class GameState(private val player: Player,
     case ActorKind.Editor => editor
   }
 
-  def setActiveActor(actorKind: ActorKind): Unit = selectedActorKind = actorKind
+  def setActiveActor(actorKind: ActorKind): Unit = {
+    selectedActorKind = actorKind
+  }
 
   def actorKind: ActorKind = selectedActorKind
 }

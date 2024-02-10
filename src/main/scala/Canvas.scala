@@ -126,6 +126,11 @@ final class Canvas(private val paintAssets: PaintAssets,
       val gridSize = gameState.grid.size
       val actorPosition = gameState.actor.position
 
+      if (gridSize.m == 0 || gridSize.n == 0) {
+        g.dispose()
+        return
+      }
+
       calculateGridOrigin(gridOrigin, paintAssets, canvasDim, gridSize, actorPosition)
 
       clearCanvas(g)

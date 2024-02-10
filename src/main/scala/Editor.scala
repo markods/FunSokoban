@@ -6,8 +6,8 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
 
   def setGrid(grid: Grid): Boolean = {
     this.grid = grid
-    editorPos.i = grid.size.m / 2
-    editorPos.j = grid.size.n / 2
+    editorPos.i = (grid.size.m - 1) / 2
+    editorPos.j = (grid.size.n - 1) / 2
     undoStack.clear()
     true
   }
@@ -44,6 +44,11 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
 
   def redo(): Boolean = {
     val change = undoStack.redoAction()
+    change.apply(grid)
+  }
+
+  def apply(change: GridChange): Unit = {
+    undoStack.addAction(change)
     change.apply(grid)
   }
 

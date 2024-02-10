@@ -26,7 +26,7 @@ final class PlayerActionStackSerializer(private val iWrap: Int
     try {
       str.lines.forEach(line => {
         for (char <- line.filterNot(_.isWhitespace)) {
-          playerActionStack.applyAction(PlayerActionSymbol.toPlayerAction(char))
+          playerActionStack.addAction(PlayerActionSymbol.toPlayerAction(char))
         }
       })
     } catch {
