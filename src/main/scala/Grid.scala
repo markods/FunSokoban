@@ -170,12 +170,8 @@ final class Grid(private val gs: GridSize,
   }
 
   override def clone(): Grid = {
-    val gridNew: Grid = new Grid(new GridSize(0, 0), defaultTile)
-    gridNew.tiles.addAll(tiles.clone())
-
-    gridNew.gs.m = gs.m
-    gridNew.gs.n = gs.n
-
+    val gridSize = gs
+    val gridNew: Grid = new Grid(new GridSize(gs.m, gs.n), tiles.clone(), defaultTile)
     gridNew
   }
 
