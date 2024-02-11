@@ -5,7 +5,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 final class Grid(private val gs: GridSize,
-                 private val defaultTile: Tile) extends Cloneable {
+                 private val defaultTile: Tile) {
   private val tiles: ArrayBuffer[Tile] = ArrayBuffer.fill(gs.m * gs.n)(defaultTile)
 
   def this(gs: GridSize, tiles: IterableOnce[Tile], defaultTile: Tile) = {
@@ -19,7 +19,7 @@ final class Grid(private val gs: GridSize,
 
   def validPosition(i: Int, j: Int): Boolean = i >= 0 && i < gs.m && j >= 0 && j < gs.n
 
-  def validAddPosition(i: Int, j: Int): Boolean = i >= 0 && i <= gs.m && j >= 0 && j <= gs.n
+  def validBandAddPosition(i: Int, j: Int): Boolean = i >= 0 && i <= gs.m && j >= 0 && j <= gs.n
 
   // Unchecked.
   def getTile(i: Int, j: Int): Tile = tiles(gs.n * i + j)
@@ -169,7 +169,7 @@ final class Grid(private val gs: GridSize,
     ff
   }
 
-  override def clone(): Grid = {
+  def copy(): Grid = {
     val gridSize = gs
     val gridNew: Grid = new Grid(new GridSize(gs.m, gs.n), tiles.clone(), defaultTile)
     gridNew
@@ -183,7 +183,7 @@ final class Grid(private val gs: GridSize,
     // First outside row/column is a valid location to add more rows/columns.
     val iUp = band.unitVectorY * idx
     val jLeft = band.unitVectorX * idx
-    if ((isAdd && !validAddPosition(iUp, jLeft)) || !validPosition(iUp, jLeft)) {
+    if ((isAdd && !validBandAddPosition(iUp, jLeft)) || !validPosition(iUp, jLeft)) {
       return false
     }
     if (isAdd) return true
