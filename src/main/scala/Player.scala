@@ -1,10 +1,10 @@
 final class Player(private val undoStack: ActionStack[PlayerAction]) extends Actor {
-  private var grid: Grid = _
+  private var playerGrid: Grid = _
   private val playerPos: GridPosition = new GridPosition(0, 0)
   private var exists: Boolean = false
 
   def setGrid(grid: Grid): Boolean = {
-    this.grid = grid
+    this.playerGrid = grid
     this.playerPos.i = (grid.size.m - 1) / 2
     this.playerPos.j = (grid.size.n - 1) / 2
     undoStack.clear()
@@ -22,6 +22,8 @@ final class Player(private val undoStack: ActionStack[PlayerAction]) extends Act
 
     true
   }
+
+  def grid: Grid = playerGrid
 
   def position: GridPosition = playerPos
 
@@ -50,18 +52,18 @@ final class Player(private val undoStack: ActionStack[PlayerAction]) extends Act
     if (!exists || !wanted.isBasicMovement) {
       return PlayerAction.None
     }
-    if (!grid.validPosition(playerPos.i, playerPos.j)) {
+    if (!playerGrid.validPosition(playerPos.i, playerPos.j)) {
       return PlayerAction.None
     }
 
     val iNext = playerPos.i + wanted.movementY
     val jNext = playerPos.j + wanted.movementX
-    if (!grid.validPosition(iNext, jNext)) {
+    if (!playerGrid.validPosition(iNext, jNext)) {
       return PlayerAction.None
     }
 
     // Only the player moves.
-    val tileNext = grid.getTile(iNext, jNext)
+    val tileNext = playerGrid.getTile(iNext, jNext)
     if (tileNext.isWalkable) {
       return wanted
     }
@@ -72,11 +74,11 @@ final class Player(private val undoStack: ActionStack[PlayerAction]) extends Act
     // Player + box move together.
     val iNextNext = iNext + wanted.movementY
     val jNextNext = jNext + wanted.movementX
-    if (!grid.validPosition(iNextNext, jNextNext)) {
+    if (!playerGrid.validPosition(iNextNext, jNextNext)) {
       return PlayerAction.None
     }
 
-    val tileNextNext = grid.getTile(iNextNext, jNextNext)
+    val tileNextNext = playerGrid.getTile(iNextNext, jNextNext)
     if (!tileNextNext.isWalkable) {
       return PlayerAction.None
     }
@@ -96,29 +98,29 @@ final class Player(private val undoStack: ActionStack[PlayerAction]) extends Act
     val j = playerPos.j + (if (!isUndo) 0 else -dX)
     val iNext = i + dY
     val jNext = j + dX
-    val isGoalA = grid.getTile(i, j).isGoal
-    val isGoalB = grid.getTile(iNext, jNext).isGoal
+    val isGoalA = playerGrid.getTile(i, j).isGoal
+    val isGoalB = playerGrid.getTile(iNext, jNext).isGoal
 
     // Update board.
     if (tilesToMove == 1) {
       // player -> walkableTile ->   // DO
       // player <- walkableTile <-   // UNDO (effectively the same as DO for two tiles)
-      grid.rotateTiles(i, j, iNext, jNext)
-      grid.setTile(i, j, grid.getTile(i, j).setGoal(isGoalA))
-      grid.setTile(iNext, jNext, grid.getTile(iNext, jNext).setGoal(isGoalB))
+      playerGrid.rotateTiles(i, j, iNext, jNext)
+      playerGrid.setTile(i, j, playerGrid.getTile(i, j).setGoal(isGoalA))
+      playerGrid.setTile(iNext, jNext, playerGrid.getTile(iNext, jNext).setGoal(isGoalB))
     }
     else if (tilesToMove == 2) {
       val iNextNext = iNext + dY
       val jNextNext = jNext + dX
-      val isGoalC = grid.getTile(iNextNext, jNextNext).isGoal
+      val isGoalC = playerGrid.getTile(iNextNext, jNextNext).isGoal
       val rotation = if (!isUndo) LinearRotation.Right else LinearRotation.Left
 
       // player -> box -> walkableTile ->   // DO
       // walkableTile <- player <- box <-   // UNDO
-      grid.rotateTiles(i, j, iNext, jNext, iNextNext, jNextNext, rotation)
-      grid.setTile(i, j, grid.getTile(i, j).setGoal(isGoalA))
-      grid.setTile(iNext, jNext, grid.getTile(iNext, jNext).setGoal(isGoalB))
-      grid.setTile(iNextNext, jNextNext, grid.getTile(iNextNext, jNextNext).setGoal(isGoalC))
+      playerGrid.rotateTiles(i, j, iNext, jNext, iNextNext, jNextNext, rotation)
+      playerGrid.setTile(i, j, playerGrid.getTile(i, j).setGoal(isGoalA))
+      playerGrid.setTile(iNext, jNext, playerGrid.getTile(iNext, jNext).setGoal(isGoalB))
+      playerGrid.setTile(iNextNext, jNextNext, playerGrid.getTile(iNextNext, jNextNext).setGoal(isGoalC))
     }
     else {
       throw new NotImplementedError

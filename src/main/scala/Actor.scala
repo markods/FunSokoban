@@ -3,6 +3,8 @@ import scala.annotation.tailrec
 trait Actor {
   def setGrid(grid: Grid): Boolean
 
+  def grid: Grid
+
   def position: GridPosition
 
   def moveNumber: Int

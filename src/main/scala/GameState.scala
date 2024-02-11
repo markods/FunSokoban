@@ -1,5 +1,5 @@
-final class GameState(private val player: Player,
-                      private val editor: Editor) {
+final class GameState(val player: Player,
+                      val editor: Editor) {
   private var currGrid: Grid = _
   private var currLevel: GameFile = _
   private var selectedActorKind: ActorKind = ActorKind.Player

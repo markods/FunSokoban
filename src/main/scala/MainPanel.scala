@@ -8,7 +8,8 @@ final class MainPanel(private val jCanvas: Canvas,
                       private val gameAssets: GameAssets,
                       private val gameState: GameState,
                       private val playerActionStack: ActionStack[PlayerAction],
-                      private val editorUndoStack: ActionStack[GridChange]) extends JPanel {
+                      private val editorUndoStack: ActionStack[GridChange],
+                      private val commandParser: CmdParser) extends JPanel {
   private val jTabbedPane: JTabbedPane = new JTabbedPane
 
   private val jPlay_Panel: JPanel = new JPanel
@@ -400,8 +401,12 @@ final class MainPanel(private val jCanvas: Canvas,
       }
       gameState.setActiveActor(actorKind)
       gameState.setLevel(gameAssets.defaultLevel, new Grid(gameAssets.defaultGridSize, Tile.Floor))
+      if (actorKind == ActorKind.Editor) {
+        gameState.editor.clearUserCommands()
+      }
     }
     jCanvas.repaint()
+
     actorKind match {
       case ActorKind.Player =>
         SwingUtilities.invokeLater(() => PopulateLevelComboBox(jPlay_LevelComboBoxModel))
@@ -409,6 +414,7 @@ final class MainPanel(private val jCanvas: Canvas,
         jPlay_TimeTextField.setText(gameAssets.zeroTimeString)
       case ActorKind.Editor =>
         SwingUtilities.invokeLater(() => {
+          jCreate_CommandHistoryTextArea.setText(gameAssets.initialCommandHistory)
           PopulateLevelComboBox(jCreate_LevelComboBoxModel)
           val defaultLevel = jCreate_LevelComboBoxModel.getElementAt(0)
           jCreate_NameTextField.setText(defaultLevel.name)
@@ -524,7 +530,7 @@ final class MainPanel(private val jCanvas: Canvas,
       gameState.setLevel(gameState.level, grid.get)
 
       // Do all moves until one fails.
-      val player = gameState.actor.asInstanceOf[Player]
+      val player = gameState.player
       while (player.move(moves.redoAction())) {}
       player.undoRedo(-player.moveNumber)
     }
@@ -551,7 +557,7 @@ final class MainPanel(private val jCanvas: Canvas,
   }
 
   private def Play_SolveLevel(): Unit = {
-    // TODO
+    // TODO: solver
   }
 
   private def CanvasPanelKeyPressed(evt: KeyEvent): Unit = {
@@ -636,7 +642,7 @@ final class MainPanel(private val jCanvas: Canvas,
     if (newLevelName.isBlank || newLevelName == gameAssets.defaultLevel.name) {
       return
     }
-    val newLevelPath = FileUtil.getPath(FileUtil.ensureExtension(s"${gameAssets.mapsRootPath}/${newLevelName}", FileKind.TextFile))
+    val newLevelPath = FileUtil.getPath(FileUtil.ensureExtension(s"${gameAssets.mapsRootPath}/$newLevelName", FileKind.TextFile))
     if (newLevelPath.isEmpty) {
       return
     }
@@ -673,7 +679,7 @@ final class MainPanel(private val jCanvas: Canvas,
 
   private def Create_SetTile(tile: Tile): Unit = {
     gameState.synchronized {
-      val editor = gameState.actor.asInstanceOf[Editor]
+      val editor = gameState.editor
       if (!editor.checkSetTile(editor.position, tile)) {
         return
       }
@@ -690,7 +696,11 @@ final class MainPanel(private val jCanvas: Canvas,
         return
       }
 
-      // TODO: parse text
+      val command = commandParser.parse(text)
+      // TODO: check this code here
+      gameState.synchronized {
+        gameState.editor.applyCommand(command)
+      }
 
       val scrollBar = jCreate_CommandHistoryScrollPane.getVerticalScrollBar
       val isScrollBarAtBottom = scrollBar.getValue + scrollBar.getVisibleAmount == scrollBar.getMaximum

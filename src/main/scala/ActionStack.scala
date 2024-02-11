@@ -25,13 +25,14 @@ final class ActionStack[T](private val noneAction: T) {
   }
 
 
-  def addAction(action: T): Unit = {
+  def addAction(action: T): Boolean = {
     if (noneAction == action) {
-      return
+      return false
     }
     dropLaterActions()
     actionStack.addOne(action)
     iNextAction += 1
+    true
   }
 
   def undoAction(): T = {
