@@ -7,7 +7,23 @@ final class ActionStack[T](private val noneAction: T) {
 
   def size: Int = iNextAction
 
-  def foreach[U](f: T => U): Unit = actionStack.foreach(f)
+  def foreach[U](f: (i: Int, t: T) => U): Unit = {
+    for (i <- 0 until iNextAction) {
+      f(i, actionStack(i))
+    }
+  }
+
+  def forall(p: (i: Int, t: T) => Boolean): Boolean = {
+    var i = 0
+    var shouldContinue = false
+    while (shouldContinue && i < iNextAction) {
+      shouldContinue = p(i, actionStack(i))
+      i += 1
+    }
+
+    shouldContinue
+  }
+
 
   def addAction(action: T): Unit = {
     if (noneAction == action) {

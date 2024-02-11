@@ -1,18 +1,20 @@
 import java.awt.event.{ActionEvent, ActionListener, KeyAdapter, KeyEvent}
 import java.awt.{Dimension, Insets, KeyboardFocusManager}
+import java.io.File
 import javax.swing.*
-import javax.swing.event.{ChangeEvent, ChangeListener, PopupMenuEvent, PopupMenuListener}
+import javax.swing.event.{ChangeEvent, ChangeListener}
 
 final class MainPanel(private val jCanvas: Canvas,
                       private val gameAssets: GameAssets,
                       private val gameState: GameState,
+                      private val playerActionStack: ActionStack[PlayerAction],
                       private val editorUndoStack: ActionStack[GridChange]) extends JPanel {
   private val jTabbedPane: JTabbedPane = new JTabbedPane
 
   private val jPlay_Panel: JPanel = new JPanel
   private val jPlay_LevelLabel: JLabel = new JLabel
-  private val jPlay_LevelComboBoxModel: DefaultComboBoxModel[GameLevel] = new DefaultComboBoxModel[GameLevel]()
-  private val jPlay_LevelComboBox: JComboBox[GameLevel] = new JComboBox[GameLevel]
+  private val jPlay_LevelComboBoxModel: DefaultComboBoxModel[GameFile] = new DefaultComboBoxModel[GameFile]()
+  private val jPlay_LevelComboBox: JComboBox[GameFile] = new JComboBox[GameFile]
   private val jPlay_MovesLabel: JLabel = new JLabel
   private val jPlay_UndoMultipleMovesButton: JButton = new JButton
   private val jPlay_UndoMoveButton: JButton = new JButton
@@ -20,16 +22,17 @@ final class MainPanel(private val jCanvas: Canvas,
   private val jPlay_RedoMoveButton: JButton = new JButton
   private val jPlay_RedoMultipleMovesButton: JButton = new JButton
   private val jPlay_ImportButton: JButton = new JButton
-  private val jPlay_SolveButton: JButton = new JButton
+  private val jPlay_SaveButton: JButton = new JButton
   private val jPlay_TimeLabel: JLabel = new JLabel
   private val jPlay_TimeTextField: JTextField = new JTextField
   private val jPlay_RestartButton: JButton = new JButton
+  private val jPlay_SolveButton: JButton = new JButton
   private val jPlay_InfoTextArea: JTextArea = new JTextArea
 
   private val jCreate_Panel: JPanel = new JPanel
   private val jCreate_LevelLabel: JLabel = new JLabel
-  private val jCreate_LevelComboBoxModel: DefaultComboBoxModel[GameLevel] = new DefaultComboBoxModel[GameLevel]()
-  private val jCreate_LevelComboBox: JComboBox[GameLevel] = new JComboBox[GameLevel]
+  private val jCreate_LevelComboBoxModel: DefaultComboBoxModel[GameFile] = new DefaultComboBoxModel[GameFile]()
+  private val jCreate_LevelComboBox: JComboBox[GameFile] = new JComboBox[GameFile]
   private val jCreate_DeleteButton: JButton = new JButton
   private val jCreate_StatusLabel: JLabel = new JLabel
   private val jCreate_StatusTextField: JTextField = new JTextField
@@ -51,6 +54,7 @@ final class MainPanel(private val jCanvas: Canvas,
 
   private val jCanvasSeparator: JSeparator = new JSeparator
   /*private val jCanvas: JCanvas = new Canvas(...)*/
+  private var previousDirectory: Option[File] = Option.empty
 
   private val gameTimer: GameTimer = new GameTimer(
     () => jPlay_TimeTextField.setText(gameAssets.zeroTimeString),
@@ -71,7 +75,7 @@ final class MainPanel(private val jCanvas: Canvas,
     jPlay_LevelLabel.setText("Level")
     jPlay_LevelComboBoxModel.addElement(gameAssets.defaultLevel)
     jPlay_LevelComboBox.setModel(jPlay_LevelComboBoxModel)
-    jPlay_LevelComboBox.addActionListener((evt: ActionEvent) => SelectLevelActionListener(jPlay_LevelComboBoxModel))
+    jPlay_LevelComboBox.addActionListener((evt: ActionEvent) => SelectLevelActionListener(jPlay_LevelComboBoxModel, ActorKind.Player))
     jPlay_MovesLabel.setText("Moves")
     jPlay_UndoMultipleMovesButton.setText("<<")
     jPlay_UndoMultipleMovesButton.setMargin(new Insets(2, 5, 3, 5))
@@ -96,9 +100,9 @@ final class MainPanel(private val jCanvas: Canvas,
     jPlay_ImportButton.setText("Import")
     jPlay_ImportButton.addActionListener((evt: ActionEvent) => Play_ImportMoves())
     jPlay_ImportButton.addKeyListener(jCanvasKeyListener)
-    jPlay_SolveButton.setText("Solve")
-    jPlay_SolveButton.addActionListener((evt: ActionEvent) => Play_SolveLevel())
-    jPlay_SolveButton.addKeyListener(jCanvasKeyListener)
+    jPlay_SaveButton.setText("Save")
+    jPlay_SaveButton.addActionListener((evt: ActionEvent) => Play_SaveMoves())
+    jPlay_SaveButton.addKeyListener(jCanvasKeyListener)
     jPlay_TimeLabel.setText("Time")
     jPlay_TimeTextField.setEditable(false)
     jPlay_TimeTextField.setHorizontalAlignment(javax.swing.SwingConstants.CENTER)
@@ -107,8 +111,10 @@ final class MainPanel(private val jCanvas: Canvas,
     jPlay_TimeTextField.setMinimumSize(new Dimension(64, 32))
     jPlay_TimeTextField.setPreferredSize(new Dimension(64, 32))
     jPlay_RestartButton.setText("Restart")
-    jPlay_RestartButton.addActionListener((evt: ActionEvent) => Play_RestartLevel())
+    jPlay_RestartButton.addActionListener((evt: ActionEvent) => SelectLevelActionListener(jPlay_LevelComboBoxModel, ActorKind.Player))
     jPlay_RestartButton.addKeyListener(jCanvasKeyListener)
+    jPlay_SolveButton.setText("Solve")
+    jPlay_SolveButton.addActionListener(evt => Play_SolveLevel())
     jPlay_InfoTextArea.setEditable(false)
     jPlay_InfoTextArea.setColumns(20)
     jPlay_InfoTextArea.setLineWrap(true)
@@ -134,7 +140,7 @@ final class MainPanel(private val jCanvas: Canvas,
                 .addComponent(jPlay_MovesLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue)
                 .addComponent(jPlay_TimeLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 38, Short.MaxValue))
               .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-              .addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+              .addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                 .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPlay_PanelLayout.createSequentialGroup()
                   .addComponent(jPlay_UndoMultipleMovesButton)
                   .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -145,15 +151,17 @@ final class MainPanel(private val jCanvas: Canvas,
                   .addComponent(jPlay_RedoMoveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE)
                   .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                   .addComponent(jPlay_RedoMultipleMovesButton)
-                  .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                  .addGap(18, 18, 18)
                   .addComponent(jPlay_ImportButton)
-                  .addGap(18, 18, 18))
+                  .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED))
                 .addGroup(jPlay_PanelLayout.createSequentialGroup()
                   .addComponent(jPlay_TimeTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                   .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                   .addComponent(jPlay_RestartButton)
+                  .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                  .addComponent(jPlay_SolveButton)
                   .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue)))
-              .addComponent(jPlay_SolveButton)))
+              .addComponent(jPlay_SaveButton)))
           .addContainerGap())
         .addComponent(jPlay_InfoTextArea)
     )
@@ -172,14 +180,16 @@ final class MainPanel(private val jCanvas: Canvas,
             .addComponent(jPlay_MovesTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
             .addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
               .addComponent(jPlay_ImportButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
-              .addComponent(jPlay_SolveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
+              .addComponent(jPlay_SaveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
               .addComponent(jPlay_RedoMultipleMovesButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
               .addComponent(jPlay_RedoMoveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)))
           .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
           .addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jPlay_TimeLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
             .addComponent(jPlay_TimeTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
-            .addComponent(jPlay_RestartButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE))
+            .addGroup(jPlay_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+              .addComponent(jPlay_RestartButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
+              .addComponent(jPlay_SolveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)))
           .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
           .addComponent(jPlay_InfoTextArea, javax.swing.GroupLayout.DEFAULT_SIZE, 418, Short.MaxValue))
     )
@@ -187,7 +197,7 @@ final class MainPanel(private val jCanvas: Canvas,
     jCreate_LevelLabel.setText("Level")
     jCreate_LevelComboBoxModel.addElement(gameAssets.defaultLevel)
     jCreate_LevelComboBox.setModel(jCreate_LevelComboBoxModel)
-    jCreate_LevelComboBox.addActionListener((evt: ActionEvent) => SelectLevelActionListener(jCreate_LevelComboBoxModel))
+    jCreate_LevelComboBox.addActionListener((evt: ActionEvent) => SelectLevelActionListener(jCreate_LevelComboBoxModel, ActorKind.Editor))
     jCreate_DeleteButton.setText("Delete")
     jCreate_DeleteButton.setToolTipText("")
     jCreate_DeleteButton.addActionListener((evt: ActionEvent) => Create_DeleteLevel())
@@ -375,6 +385,8 @@ final class MainPanel(private val jCanvas: Canvas,
         .addComponent(jTabbedPane)
         .addComponent(jCanvasSeparator)
     )
+
+    previousDirectory = FileUtil.getFile(gameAssets.rootPath)
   }
 
   private def ChangeTab(): Unit = {
@@ -391,42 +403,69 @@ final class MainPanel(private val jCanvas: Canvas,
     }
     jCanvas.repaint()
     actorKind match {
-      case ActorKind.Player => SwingUtilities.invokeLater(() => PopulateLevelComboBox(jPlay_LevelComboBoxModel))
-      case ActorKind.Editor => SwingUtilities.invokeLater(() => PopulateLevelComboBox(jCreate_LevelComboBoxModel))
+      case ActorKind.Player =>
+        SwingUtilities.invokeLater(() => PopulateLevelComboBox(jPlay_LevelComboBoxModel))
+        jPlay_MovesTextField.setText("0")
+        jPlay_TimeTextField.setText(gameAssets.zeroTimeString)
+      case ActorKind.Editor =>
+        SwingUtilities.invokeLater(() => {
+          PopulateLevelComboBox(jCreate_LevelComboBoxModel)
+          val defaultLevel = jCreate_LevelComboBoxModel.getElementAt(0)
+          jCreate_NameTextField.setText(defaultLevel.name)
+        })
     }
-
     gameTimer.stop()
-    jPlay_MovesTextField.setText("0")
-    jPlay_TimeTextField.setText(gameAssets.zeroTimeString)
   }
 
-  private def ClearLevelComboBox(model: DefaultComboBoxModel[GameLevel]): Unit = {
-    val firstElem: GameLevel = model.getElementAt(0)
+  private def ClearLevelComboBox(model: DefaultComboBoxModel[GameFile]): Unit = {
+    val firstElem: GameFile = model.getElementAt(0)
     model.removeAllElements()
     model.addElement(firstElem)
   }
 
-  private def PopulateLevelComboBox(model: DefaultComboBoxModel[GameLevel]): Unit = {
+  private def PopulateLevelComboBox(model: DefaultComboBoxModel[GameFile]): Unit = {
     ClearLevelComboBox(model)
 
-    val pathList = FileUtil.listFilesInDirectory(gameAssets.levelRootPath)
+    val pathList = FileUtil.listFilesInDirectory(gameAssets.mapsRootPath)
     if (pathList.isEmpty) {
       return
     }
 
     for (path <- pathList) {
-      // Good enough for this purpose. Better extension stripping should be done.
-      val levelName = path.getFileName.toString.takeWhile(_ != '.')
-      model.addElement(GameLevel(levelName, path))
+      val levelName = FileUtil.getFileNameNoExtension(path)
+      model.addElement(GameFile(levelName, path))
     }
   }
 
-  private def SelectLevelActionListener(model: DefaultComboBoxModel[GameLevel]): Unit = {
-    val level = model.getSelectedItem.asInstanceOf[GameLevel]
-    SelectLevel(level)
+  private def SelectLevelActionListener(model: DefaultComboBoxModel[GameFile], actorKind: ActorKind): Unit = {
+    var level = Option(model.getSelectedItem.asInstanceOf[GameFile]).getOrElse(gameAssets.defaultLevel)
+    gameState.synchronized {
+      // TODO: when we leave the combo box, there is no selection
+      if (gameState.level == level) {
+        return
+      }
+
+      var grid = readLevelFromFile(level)
+      if (grid.isEmpty) {
+        level = gameAssets.defaultLevel
+        grid = Option(new Grid(gameAssets.defaultGridSize, Tile.Floor))
+      }
+
+      gameState.setLevel(level, grid.get)
+    }
+    jCanvas.repaint()
+
+    actorKind match {
+      case ActorKind.Player =>
+        jPlay_MovesTextField.setText("0")
+        gameTimer.restart()
+      case ActorKind.Editor =>
+        jCreate_NameTextField.setText(level.name)
+        gameTimer.stop()
+    }
   }
 
-  private def SelectLevel(level: GameLevel): Unit = {
+  private def readLevelFromFile(level: GameFile): Option[Grid] = {
     var grid: Option[Grid] = Option.empty
 
     if (level != null && level != gameAssets.defaultLevel) {
@@ -440,19 +479,7 @@ final class MainPanel(private val jCanvas: Canvas,
       }
     }
 
-    if (grid.isEmpty) {
-      grid = Option(new Grid(gameAssets.defaultGridSize, Tile.Floor))
-      gameTimer.stop()
-    }
-    else {
-      gameTimer.restart()
-    }
-
-    gameState.synchronized {
-      gameState.setLevel(level, grid.get)
-    }
-    jCanvas.repaint()
-    jPlay_MovesTextField.setText("0")
+    grid
   }
 
   private def Play_UndoRedoMoves(moves: Int): Unit = {
@@ -469,17 +496,62 @@ final class MainPanel(private val jCanvas: Canvas,
   }
 
   private def Play_ImportMoves(): Unit = {
-    // TODO
+    val (filePath, directory) = FileUtil.getUserSelectedPath(FileActionKind.Open, FileKind.TextFile, previousDirectory)
+    if (filePath.isEmpty) {
+      return
+    }
+    previousDirectory = directory
+
+    val fileContents = FileUtil.readFromFile(filePath.get)
+    if (fileContents.isEmpty) {
+      return
+    }
+
+    val playerActionStackSerializer = new PlayerActionStackSerializer(gameAssets.defaultPlayerActionWrap)
+    val deserializedMoves = playerActionStackSerializer.toObject(fileContents.get)
+    if (deserializedMoves.isEmpty) {
+      return
+    }
+    val moves = deserializedMoves.get
+    moves.undoAllActions()
+
+    gameState.synchronized {
+      // Reset board.
+      val grid = readLevelFromFile(gameState.level)
+      if (grid.isEmpty) {
+        return
+      }
+      gameState.setLevel(gameState.level, grid.get)
+
+      // Do all moves until one fails.
+      val player = gameState.actor.asInstanceOf[Player]
+      while (player.move(moves.redoAction())) {}
+      player.undoRedo(-player.moveNumber)
+    }
+
+    jCanvas.repaint()
+  }
+
+  private def Play_SaveMoves(): Unit = {
+    val (filePath, directory) = FileUtil.getUserSelectedPath(FileActionKind.Save, FileKind.MovesTextFile, previousDirectory)
+    if (filePath.isEmpty) {
+      return
+    }
+    previousDirectory = directory
+
+    val playerActionStackSerializer = new PlayerActionStackSerializer(gameAssets.defaultPlayerActionWrap)
+    val content = playerActionStackSerializer.toString(playerActionStack)
+    if (content.isEmpty) {
+      return
+    }
+
+    if (!FileUtil.writeToFile(filePath.get, content)) {
+      return
+    }
   }
 
   private def Play_SolveLevel(): Unit = {
     // TODO
-  }
-
-  private def Play_RestartLevel(): Unit = {
-    gameState.synchronized {
-      SelectLevel(gameState.level)
-    }
   }
 
   private def CanvasPanelKeyPressed(evt: KeyEvent): Unit = {
@@ -514,15 +586,89 @@ final class MainPanel(private val jCanvas: Canvas,
   }
 
   private def Create_DeleteLevel(): Unit = {
-    // TODO
+    val level = gameState.synchronized {
+      val level = gameState.level
+      gameState.setLevel(gameAssets.defaultLevel, new Grid(gameAssets.defaultGridSize, Tile.Floor))
+      level
+    }
+    if (level != gameAssets.defaultLevel) {
+      FileUtil.deleteFile(level.path.toString)
+    }
+    jCanvas.repaint()
+    SwingUtilities.invokeLater(() => PopulateLevelComboBox(jCreate_LevelComboBoxModel))
   }
 
   private def Create_ImportLevel(): Unit = {
-    // TODO
+    val (filePath, directory) = FileUtil.getUserSelectedPath(FileActionKind.Open, FileKind.TextFile, previousDirectory)
+    if (filePath.isEmpty) {
+      return
+    }
+    previousDirectory = directory
+
+    val fileContents = FileUtil.readFromFile(filePath.get)
+    if (fileContents.isEmpty) {
+      return
+    }
+
+    val gridSerializer = new GridSerializer()
+    val deserializedGrid = gridSerializer.toObject(fileContents.get)
+    if (deserializedGrid.isEmpty) {
+      return
+    }
+    val grid = deserializedGrid.get
+    val defaultLevel = jCreate_LevelComboBoxModel.getElementAt(0)
+
+    // Order is important here.
+    jCreate_LevelComboBoxModel.setSelectedItem(defaultLevel)
+    gameState.synchronized {
+      gameState.setLevel(defaultLevel, grid)
+    }
+    jCanvas.repaint()
+    jCreate_NameTextField.setText(defaultLevel.name)
   }
 
   private def Create_SaveLevel(): Unit = {
-    // TODO: check that the level name isn't the default level name; only contains alphanumeric chars + _; append .txt to it when saving
+    val text = jCreate_NameTextField.getText
+    if (text.isBlank) {
+      return
+    }
+    val newLevelName = text.trim
+    if (newLevelName.isBlank || newLevelName == gameAssets.defaultLevel.name) {
+      return
+    }
+    val newLevelPath = FileUtil.getPath(FileUtil.ensureExtension(s"${gameAssets.mapsRootPath}/${newLevelName}", FileKind.TextFile))
+    if (newLevelPath.isEmpty) {
+      return
+    }
+
+    val oldLevel = Option(jCreate_LevelComboBoxModel.getSelectedItem.asInstanceOf[GameFile]).getOrElse(gameAssets.defaultLevel)
+    val newLevel = GameFile(newLevelName, newLevelPath.get)
+    val level = if (oldLevel != gameAssets.defaultLevel) oldLevel else newLevel
+
+    if (oldLevel != gameAssets.defaultLevel && oldLevel != newLevel) {
+      // Only move game file if it already exists.
+      if (!FileUtil.moveFile(oldLevel.path.toString, newLevel.path.toString)) {
+        return
+      }
+    }
+
+    val gridSerializer = new GridSerializer()
+    val content = gameState.synchronized {
+      gridSerializer.toString(gameState.grid)
+    }
+    if (content.isBlank) {
+      return
+    }
+
+    if (!FileUtil.writeToFile(newLevel.path.toString, content)) {
+      return
+    }
+
+    SwingUtilities.invokeLater(() => {
+      PopulateLevelComboBox(jCreate_LevelComboBoxModel)
+      jCreate_LevelComboBoxModel.setSelectedItem(newLevel)
+      jCreate_NameTextField.setText(newLevel.name)
+    })
   }
 
   private def Create_SetTile(tile: Tile): Unit = {
@@ -543,6 +689,8 @@ final class MainPanel(private val jCanvas: Canvas,
       if (text.isEmpty) {
         return
       }
+
+      // TODO: parse text
 
       val scrollBar = jCreate_CommandHistoryScrollPane.getVerticalScrollBar
       val isScrollBarAtBottom = scrollBar.getValue + scrollBar.getVisibleAmount == scrollBar.getMaximum

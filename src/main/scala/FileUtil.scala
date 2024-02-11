@@ -7,13 +7,55 @@ import javax.swing.{JFileChooser, JFrame}
 import scala.io.Source
 import scala.jdk.CollectionConverters.*
 import scala.util.Using
+import scala.util.matching.Regex
 
 
 object FileUtil {
   private val logger = Logger.getLogger(getClass.getName)
 
-  def readFromFile(filePath: String): Option[String] = {
-    try Using.resource(Source.fromFile(filePath)) { source =>
+  def getPath(filePathString: String): Option[Path] = {
+    try {
+      Option(Paths.get(filePathString))
+    } catch {
+      case ex: InvalidPathException =>
+        logger.log(Level.INFO, "The file path is invalid.", ex)
+        Option.empty
+    }
+  }
+
+  def getFile(filePathString: String): Option[File] = {
+    try {
+      Option(Paths.get(filePathString).toFile)
+    } catch {
+      case ex: InvalidPathException =>
+        logger.log(Level.INFO, "The file path is invalid.", ex)
+        Option.empty
+      case ex: UnsupportedOperationException =>
+        logger.log(Level.INFO, "The path is not associated with the default provider.", ex)
+        Option.empty
+    }
+  }
+
+  def getFileNameNoExtension(filePath: Path): String = {
+    // Good enough for this purpose. Better extension stripping should be done.
+    val fileNameExtension = filePath.getFileName.toString
+    val regex = new Regex(".*\\.")
+    val fileNameNoExtension = regex.replaceFirstIn(fileNameExtension.reverse, "").reverse
+    fileNameNoExtension
+  }
+
+  def ensureExtension(filePathString: String, fileKind: FileKind): String = {
+    val result = filePathString +
+      (fileKind match {
+        case FileKind.TextFile if !filePathString.endsWith(".txt") => ".txt"
+        case FileKind.MovesTextFile if !filePathString.endsWith(".moves.txt") => ".moves.txt"
+        case _ => ""
+      })
+    result
+  }
+
+  def readFromFile(filePathString: String): Option[String] = {
+    try Using.resource(Source.fromFile(filePathString)) { source =>
       val contents = source.mkString
       val wrappedContents = if (contents.nonEmpty) Option(contents) else Option.empty
       wrappedContents
@@ -27,11 +69,14 @@ object FileUtil {
     }
   }
 
-  def writeToFile(filePath: String, content: String): Boolean = {
-    try Using.resource(Files.newBufferedWriter(Paths.get(filePath))) { writer =>
+  def writeToFile(filePathString: String, content: String): Boolean = {
+    try Using.resource(Files.newBufferedWriter(Paths.get(filePathString))) { writer =>
       writer.write(content)
       true
     } catch {
+      case ex: InvalidPathException =>
+        logger.log(Level.INFO, "The file path is invalid.", ex)
+        false
       case ex: FileNotFoundException =>
         logger.log(Level.INFO, "Could not find file with given path.", ex)
         false
@@ -41,13 +86,16 @@ object FileUtil {
     }
   }
 
-  def moveFile(oldFilePath: String, newFilePath: String): Boolean = {
+  def moveFile(oldFilePathString: String, newFilePathString: String): Boolean = {
     try {
-      val oldPath: Path = Paths.get(oldFilePath)
-      val newPath: Path = Paths.get(newFilePath)
+      val oldPath: Path = Paths.get(oldFilePathString)
+      val newPath: Path = Paths.get(newFilePathString)
       Files.move(oldPath, newPath)
       true
     } catch {
+      case ex: InvalidPathException =>
+        logger.log(Level.INFO, "At least one of the file paths is invalid.", ex)
+        false
       case ex: FileAlreadyExistsException =>
         logger.log(Level.INFO, "The destination file already exists.", ex)
         false
@@ -60,19 +108,46 @@ object FileUtil {
     }
   }
 
-  def listFilesInDirectory(directoryPath: String): List[Path] = {
-    val path = Paths.get(directoryPath)
-    if (!Files.exists(path) || !Files.isDirectory(path)) {
-      return Nil
-    }
-
+  def deleteFile(filePathString: String): Boolean = {
     try {
+      Files.delete(Paths.get(filePathString))
+      true
+    } catch {
+      case ex: InvalidPathException =>
+        logger.log(Level.INFO, "At least one of the file paths is invalid.", ex)
+        false
+      case ex: NoSuchFileException =>
+        logger.log(Level.INFO, "No file exists with the given path.", ex)
+        false
+      case ex: DirectoryNotEmptyException =>
+        logger.log(Level.INFO, "Could not delete non-empty directory.", ex)
+        false
+      case ex: IOException =>
+        logger.log(Level.INFO, "Could not move file.", ex)
+        false
+      case ex: SecurityException =>
+        logger.log(Level.INFO, "Insufficient permissions.", ex)
+        false
+    }
+  }
+
+  def listFilesInDirectory(directoryPathString: String): List[Path] = {
+    try {
+      val path = Paths.get(directoryPathString)
+      if (!Files.exists(path) || !Files.isDirectory(path)) {
+        return Nil
+      }
+
       val stream = Files.walk(path, FileVisitOption.FOLLOW_LINKS)
       val files = stream.iterator().asScala
         .filter(Files.isRegularFile(_))
         .toList
+
       files
     } catch {
+      case ex: InvalidPathException =>
+        logger.log(Level.INFO, "The directory path is invalid.", ex)
+        Nil
       case ex: SecurityException =>
         logger.log(Level.INFO, "Could not create parent directories - insufficient privileges.", ex)
         Nil
@@ -82,19 +157,22 @@ object FileUtil {
     }
   }
 
-  def getUserSelectedPath(actionKind: FileActionKind, fileKind: FileKind, previousFilePath: Option[File] = None): (Option[String], Option[File]) = {
+  def getUserSelectedPath(actionKind: FileActionKind, fileKind: FileKind, previousDirectory: Option[File] = None): (Option[String], Option[File]) = {
     val FileChooser = new JFileChooser
     FileChooser.setMultiSelectionEnabled(false)
     FileChooser.setFileSelectionMode(fileKind match {
       case FileKind.Directory => JFileChooser.DIRECTORIES_ONLY
       case FileKind.TextFile => JFileChooser.FILES_ONLY
+      case FileKind.MovesTextFile => JFileChooser.FILES_ONLY
     })
-    if (previousFilePath.nonEmpty) {
-      FileChooser.setCurrentDirectory(previousFilePath.orNull)
+    if (previousDirectory.nonEmpty) {
+      FileChooser.setCurrentDirectory(previousDirectory.orNull)
     }
     fileKind match {
       case FileKind.TextFile =>
         FileChooser.setFileFilter(new FileNameExtensionFilter("Text file (*.txt)", "txt"))
+      case FileKind.MovesTextFile =>
+        FileChooser.setFileFilter(new FileNameExtensionFilter("Moves text file (*.moves.txt)", "txt"))
       case _ =>
     }
 
@@ -110,25 +188,21 @@ object FileUtil {
         case FileActionKind.Save => FileChooser.showSaveDialog(Frame)
       }
       if (dialogStatus != JFileChooser.APPROVE_OPTION) {
-        return (None, previousFilePath)
+        return (None, previousDirectory)
       }
 
       val usPath = FileChooser.getSelectedFile.getAbsolutePath
-      val path = usPath +
-        (fileKind match {
-          case FileKind.TextFile if !usPath.endsWith(".txt") => ".txt"
-          case _ => ""
-        })
+      val path = FileUtil.ensureExtension(usPath, fileKind)
 
       (Option(path), Option(FileChooser.getCurrentDirectory))
     }
     catch {
       case ex: HeadlessException =>
         logger.log(Level.INFO, "Could not open file chooser.", ex)
-        (None, previousFilePath)
+        (None, previousDirectory)
       case ex: SecurityException =>
         logger.log(Level.INFO, "Could not create parent directories - insufficient privileges.", ex)
-        (None, previousFilePath)
+        (None, previousDirectory)
     }
   }
 }

@@ -1,2 +1,2 @@
 enum FileKind:
-  case Directory, TextFile
+  case Directory, TextFile, MovesTextFile

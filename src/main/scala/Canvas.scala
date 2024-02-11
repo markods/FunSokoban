@@ -62,16 +62,17 @@ final class Canvas(private val paintAssets: PaintAssets,
     }
   }
 
-  private def drawTiles(g: Graphics2D, gridOrigin: Point, gridSize: GridSize): Unit = {
+  private def drawTiles(g: Graphics2D, gridOrigin: Point, gridSize: GridSize, which: Tile => Boolean): Unit = {
     val tileDim = gameAssets.tileDim
 
     for (i <- 0 until gridSize.m; j <- 0 until gridSize.n) {
       val tileX = gridOrigin.x + j * tileDim.width
       val tileY = gridOrigin.y + i * tileDim.height
       val tile = gameState.grid.getTile(i, j)
-      val tileImage = gameAssets.tileIcon(tile).getImage
-
-      g.drawImage(tileImage, tileX, tileY, this)
+      if (which(tile)) {
+        val tileImage = gameAssets.tileIcon(tile).getImage
+        g.drawImage(tileImage, tileX, tileY, this)
+      }
     }
   }
 
@@ -134,8 +135,9 @@ final class Canvas(private val paintAssets: PaintAssets,
       calculateGridOrigin(gridOrigin, paintAssets, canvasDim, gridSize, actorPosition)
 
       clearCanvas(g)
-      drawTiles(g, gridOrigin, gridSize)
+      drawTiles(g, gridOrigin, gridSize, tile => !tile.isSolid)
       drawGridLines(g, gridOrigin, gridSize)
+      drawTiles(g, gridOrigin, gridSize, tile => tile.isSolid)
       if (gameState.actorKind == ActorKind.Editor) {
         drawFocusFrame(g, gridOrigin, actorPosition)
       }

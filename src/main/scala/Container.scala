@@ -23,7 +23,7 @@ final class Container {
     gameState.setLevel(gameAssets.defaultLevel, grid)
 
     canvas = new Canvas(paintAssets, gameAssets, gameState)
-    mainPanel = new MainPanel(canvas, gameAssets, gameState, editorActionStack)
+    mainPanel = new MainPanel(canvas, gameAssets, gameState, playerActionStack, editorActionStack)
     mainFrame = new MainFrame(mainPanel, gameAssets.tileIcon(Tile.Box))
   }
 

@@ -27,6 +27,9 @@ enum Tile(private val _idx: Int):
   def isWalkable: Boolean =
     this == Tile.Floor || this == Tile.Goal
 
+  def isSolid: Boolean =
+    this == Tile.Wall || this == Tile.Box || this == Tile.BoxGoal
+
   def setGoal(isGoal: Boolean): Tile =
     if isGoal then
       this match

@@ -1,14 +1,14 @@
 final class GameState(private val player: Player,
                       private val editor: Editor) {
   private var currGrid: Grid = _
-  private var currLevel: GameLevel = _
+  private var currLevel: GameFile = _
   private var selectedActorKind: ActorKind = ActorKind.Player
 
-  def level: GameLevel = currLevel
+  def level: GameFile = currLevel
 
   def grid: Grid = currGrid
 
-  def setLevel(level: GameLevel, grid: Grid): Boolean = {
+  def setLevel(level: GameFile, grid: Grid): Boolean = {
     currLevel = level
     currGrid = grid
     actor.setGrid(grid)

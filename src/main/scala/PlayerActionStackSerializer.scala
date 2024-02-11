@@ -8,14 +8,11 @@ final class PlayerActionStackSerializer(private val iWrap: Int
                                        ) extends Serializer[ActionStack[PlayerAction]] {
   override def toString(playerActionStack: ActionStack[PlayerAction]): String = {
     val stringBuilder = StringBuilder()
-    var i = 0
-    playerActionStack.foreach(elem => {
+    playerActionStack.foreach((i, elem) => {
       stringBuilder.append(PlayerActionSymbol.toSymbol(elem))
-      if (i == iWrap) {
-        i = -1
+      if ((i + 1) % iWrap == 0) {
         stringBuilder.append("\n")
       }
-      i = i + 1
     })
     stringBuilder.mkString
   }
