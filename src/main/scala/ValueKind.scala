@@ -1,2 +1,2 @@
 enum ValueKind:
-  case Num, Pos, Tile, Ident
+  case None, Num, Pos, Tile, Ident

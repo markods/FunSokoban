@@ -1,5 +1,7 @@
 final class GameState(val player: Player,
-                      val editor: Editor) {
+                      val editor: Editor,
+                      val playerUndoStack: ActionStack[PlayerAction],
+                      val editorUndoStack: ActionStack[GridChange]) {
   private var currGrid: Grid = _
   private var currLevel: GameFile = _
   private var selectedActorKind: ActorKind = ActorKind.Player

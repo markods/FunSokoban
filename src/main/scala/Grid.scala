@@ -134,7 +134,7 @@ final class Grid(private val gs: GridSize,
         return
       }
 
-      val position = unvisited.removeHead()
+      val position = unvisited.removeHead(/*resizeInternalRepr*/ true)
       ff.area.add(position)
 
       val tile = getTile(position.i, position.j)
@@ -255,6 +255,7 @@ final class Grid(private val gs: GridSize,
 
   private def dropRightInPlaceTiles(count: Int): Unit = {
     tiles.dropRightInPlace(count)
+    tiles.trimToSize()
   }
 
 }

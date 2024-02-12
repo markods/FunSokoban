@@ -12,6 +12,13 @@ object GridChangeNone extends GridChange {
   def undo(grid: Grid): Boolean = false
 }
 
+object GridChangeUnit extends GridChange {
+  def apply(grid: Grid): Boolean = true
+
+  def undo(grid: Grid): Boolean = true
+}
+
+
 final class GridChangeList extends GridChange {
   private val gridChange = mutable.ArrayBuffer[GridChange]()
 
@@ -22,7 +29,7 @@ final class GridChangeList extends GridChange {
   }
 
   def addAll(changes: GridChangeList): Unit = {
-    gridChange.addAll(changes.gridChange)
+    gridChange.addAll(changes.gridChange.filter(change => change != GridChangeNone && change != GridChangeUnit))
   }
 
   def apply(grid: Grid): Boolean = {

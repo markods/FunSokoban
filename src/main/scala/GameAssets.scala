@@ -2,6 +2,7 @@ import java.awt.Dimension
 import java.nio.file.Paths
 import java.util.logging.{Level, Logger}
 import javax.swing.ImageIcon
+import scala.collection.mutable
 
 private object GameAssets {
   private val logger = Logger.getLogger(getClass.getName)
@@ -11,7 +12,7 @@ final class GameAssets {
   private val tilePath = new Array[String](Tile.values.length)
   private val tileIconMap = new Array[ImageIcon](Tile.values.length)
   val tileDim = new Dimension(0, 0)
-  val initialCommandHistory = "// Keys\n// ------------------------\n// Ctrl+z, Ctrl+y - undo, redo\n// enter - input command\n// arrow keys - move selection\n\n\n// Language\n// ------------------------\n// Parameters:\n// - num: number\n// - tile: can be \"floor\", \"wall\", \"box\", \"goal\", \"player\", \"boxOnGoal\", \"playerOnGoal\".\n// - pos: position x:y.\n// - ident: identifier.\n// - type: can be Num, Pos, Tile, Ident.\n\nextendRow(iBetween: Num, count: Num)\nextendCol(jBetween: Num, count: Num)\ndeleteRow(i: Num, count: Num)\ndeleteCol(i: Num, count: Num)\nsetTile(pos: Pos, tile: Tile)\n\ninvertBoxGoal()\nminimizeWall()\nfilterWall(pos: Pos, circumference: Num)\nfractalizeWall(pos: Pos, origin: Pos)\nvalidateLevel()\nundef(name: Ident)\nclear()\n\n// Define a function. Commands are executed in order until one fails, considered success if at least one succeeds.\nfn foo(pos1: Pos, pos2: Pos, n: Num) = tile_set(\"wall\", pos1) wall_fractalize(pos1) wall_filter(pos2, n)\n\n// Define a transaction. Commands are executed in order and either all succeed or none do.\ntn bar(t, Tile, pos1: Pos) = tile_set(t, pos1) wall_fractalize(pos1) level_validate()\n\n\n// Commands\n// ------------------"
+  val initialCommandHistory = "// Keys\n// ------------------------\n// Ctrl+z, Ctrl+y - undo, redo\n// enter - input command\n// arrow keys - move selection\n\n\n// Language\n// ------------------------\n// Parameters:\n// - num: number\n// - tile: can be \"floor\", \"wall\", \"box\", \"goal\", \"player\", \"boxOnGoal\", \"playerOnGoal\".\n// - pos: position x:y.\n// - ident: identifier.\n// - type: can be Num, Pos, Tile, Ident.\n\nextendRow(iBetween: Num, count: Num)\nextendCol(jBetween: Num, count: Num)\ndeleteRow(i: Num, count: Num)\ndeleteCol(i: Num, count: Num)\nsetTile(pos: Pos, tile: Tile)\n\ninvertBoxGoal()\nminimizeWall()\nfilterWall(pos: Pos, radius: Num)\nfractalizeWall(pos: Pos, origin: Pos)\nvalidateLevel()\nundef(name: Ident)\nclear()\n\n// Define a function. Commands are executed in order until one fails, considered success if at least one succeeds.\nfn foo(pos1: Pos, pos2: Pos, n: Num) = tile_set(\"wall\", pos1) wall_fractalize(pos1) wall_filter(pos2, n)\n\n// Define a transaction. Commands are executed in order and either all succeed or none do.\ntn bar(t, Tile, pos1: Pos) = tile_set(t, pos1) wall_fractalize(pos1) level_validate()\n\n\n// Commands\n// ------------------"
   val rootPath = "./src/main"
   val mapsRootPath = "./src/main/maps"
   private val defaultLevelName = "----- | level | -----"
@@ -19,6 +20,8 @@ final class GameAssets {
   val zeroTimeString = "00:00:00"
   val defaultGridSize = new GridSize(10, 12)
   val defaultPlayerActionWrap = 80
+  val keywords: mutable.Set[String] = mutable.Set()
+  val predefNames: mutable.Set[String] = mutable.Set()
   configure()
 
   def configure(): Unit = {
@@ -54,6 +57,26 @@ final class GameAssets {
         throw ex
       }
     }
+
+    keywords.add("fn")
+    keywords.add("tn")
+    keywords.add("Num")
+    keywords.add("Pos")
+    keywords.add("Tile")
+    keywords.add("Ident")
+
+    predefNames.add("extendRow")
+    predefNames.add("extendCol")
+    predefNames.add("deleteRow")
+    predefNames.add("deleteCol")
+    predefNames.add("setTile")
+    predefNames.add("invertBoxGoal")
+    predefNames.add("minimizeWall")
+    predefNames.add("filterWall")
+    predefNames.add("fractalizeWall")
+    predefNames.add("validateLevel")
+    predefNames.add("undef")
+    predefNames.add("clear")
   }
 
 

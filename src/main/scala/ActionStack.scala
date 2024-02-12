@@ -64,6 +64,7 @@ final class ActionStack[T](private val noneAction: T) {
   private def dropLaterActions(): Unit = {
     if (iNextAction < actionStack.size) {
       actionStack.dropRightInPlace(actionStack.size - iNextAction)
+      actionStack.trimToSize()
     }
   }
 

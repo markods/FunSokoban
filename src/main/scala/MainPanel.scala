@@ -7,8 +7,6 @@ import javax.swing.event.{ChangeEvent, ChangeListener}
 final class MainPanel(private val jCanvas: Canvas,
                       private val gameAssets: GameAssets,
                       private val gameState: GameState,
-                      private val playerActionStack: ActionStack[PlayerAction],
-                      private val editorUndoStack: ActionStack[GridChange],
                       private val commandParser: CmdParser) extends JPanel {
   private val jTabbedPane: JTabbedPane = new JTabbedPane
 
@@ -76,7 +74,7 @@ final class MainPanel(private val jCanvas: Canvas,
     jPlay_LevelLabel.setText("Level")
     jPlay_LevelComboBoxModel.addElement(gameAssets.defaultLevel)
     jPlay_LevelComboBox.setModel(jPlay_LevelComboBoxModel)
-    jPlay_LevelComboBox.addActionListener((evt: ActionEvent) => SelectLevelActionListener(jPlay_LevelComboBoxModel, ActorKind.Player))
+    jPlay_LevelComboBox.addActionListener((evt: ActionEvent) => SelectLevelActionListener(jPlay_LevelComboBoxModel, ActorKind.Player, false))
     jPlay_MovesLabel.setText("Moves")
     jPlay_UndoMultipleMovesButton.setText("<<")
     jPlay_UndoMultipleMovesButton.setMargin(new Insets(2, 5, 3, 5))
@@ -112,7 +110,7 @@ final class MainPanel(private val jCanvas: Canvas,
     jPlay_TimeTextField.setMinimumSize(new Dimension(64, 32))
     jPlay_TimeTextField.setPreferredSize(new Dimension(64, 32))
     jPlay_RestartButton.setText("Restart")
-    jPlay_RestartButton.addActionListener((evt: ActionEvent) => SelectLevelActionListener(jPlay_LevelComboBoxModel, ActorKind.Player))
+    jPlay_RestartButton.addActionListener((evt: ActionEvent) => SelectLevelActionListener(jPlay_LevelComboBoxModel, ActorKind.Player, true))
     jPlay_RestartButton.addKeyListener(jCanvasKeyListener)
     jPlay_SolveButton.setText("Solve")
     jPlay_SolveButton.addActionListener(evt => Play_SolveLevel())
@@ -198,7 +196,7 @@ final class MainPanel(private val jCanvas: Canvas,
     jCreate_LevelLabel.setText("Level")
     jCreate_LevelComboBoxModel.addElement(gameAssets.defaultLevel)
     jCreate_LevelComboBox.setModel(jCreate_LevelComboBoxModel)
-    jCreate_LevelComboBox.addActionListener((evt: ActionEvent) => SelectLevelActionListener(jCreate_LevelComboBoxModel, ActorKind.Editor))
+    jCreate_LevelComboBox.addActionListener((evt: ActionEvent) => SelectLevelActionListener(jCreate_LevelComboBoxModel, ActorKind.Editor, false))
     jCreate_DeleteButton.setText("Delete")
     jCreate_DeleteButton.setToolTipText("")
     jCreate_DeleteButton.addActionListener((evt: ActionEvent) => Create_DeleteLevel())
@@ -401,9 +399,6 @@ final class MainPanel(private val jCanvas: Canvas,
       }
       gameState.setActiveActor(actorKind)
       gameState.setLevel(gameAssets.defaultLevel, new Grid(gameAssets.defaultGridSize, Tile.Floor))
-      if (actorKind == ActorKind.Editor) {
-        gameState.editor.clearUserCommands()
-      }
     }
     jCanvas.repaint()
 
@@ -443,11 +438,11 @@ final class MainPanel(private val jCanvas: Canvas,
     }
   }
 
-  private def SelectLevelActionListener(model: DefaultComboBoxModel[GameFile], actorKind: ActorKind): Unit = {
+  private def SelectLevelActionListener(model: DefaultComboBoxModel[GameFile], actorKind: ActorKind, force: Boolean): Unit = {
     var level = Option(model.getSelectedItem.asInstanceOf[GameFile]).getOrElse(gameAssets.defaultLevel)
     gameState.synchronized {
       // TODO: when we leave the combo box, there is no selection
-      if (gameState.level == level) {
+      if (!force && gameState.level == level) {
         return
       }
 
@@ -539,6 +534,12 @@ final class MainPanel(private val jCanvas: Canvas,
   }
 
   private def Play_SaveMoves(): Unit = {
+    gameState.synchronized {
+      if (gameState.player.moveNumber == 0) {
+        return
+      }
+    }
+
     val (filePath, directory) = FileUtil.getUserSelectedPath(FileActionKind.Save, FileKind.MovesTextFile, previousDirectory)
     if (filePath.isEmpty) {
       return
@@ -546,7 +547,9 @@ final class MainPanel(private val jCanvas: Canvas,
     previousDirectory = directory
 
     val playerActionStackSerializer = new PlayerActionStackSerializer(gameAssets.defaultPlayerActionWrap)
-    val content = playerActionStackSerializer.toString(playerActionStack)
+    val content = gameState.synchronized {
+      playerActionStackSerializer.toString(gameState.playerUndoStack)
+    }
     if (content.isEmpty) {
       return
     }
@@ -557,7 +560,7 @@ final class MainPanel(private val jCanvas: Canvas,
   }
 
   private def Play_SolveLevel(): Unit = {
-    // TODO: solver
+    // TODO:
   }
 
   private def CanvasPanelKeyPressed(evt: KeyEvent): Unit = {
@@ -696,10 +699,14 @@ final class MainPanel(private val jCanvas: Canvas,
         return
       }
 
-      val command = commandParser.parse(text)
-      // TODO: check this code here
-      gameState.synchronized {
-        gameState.editor.applyCommand(command)
+      val commandOrMessage = commandParser.parse(text)
+      commandOrMessage match {
+        case Left(command) =>
+          gameState.synchronized {
+            gameState.editor.applyCmd(command)
+          }
+        case Right(message) =>
+          jCreate_StatusLabel.setText(message)
       }
 
       val scrollBar = jCreate_CommandHistoryScrollPane.getVerticalScrollBar

@@ -3,8 +3,25 @@ import scala.collection.mutable
 final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor {
   private var editorGrid: Grid = _
   private val editorPos: GridPosition = new GridPosition(0, 0)
-  private val predefCommands: mutable.Set[CmdAction] = mutable.Set()
-  private val userCommands: mutable.Set[CmdAction] = mutable.Set()
+  private val predefCommands: mutable.Set[Cmd] = mutable.Set()
+  private val userCommands: mutable.Set[Cmd] = mutable.Set()
+  private val commandLiteralStack: CmdLiteralStack = new CmdLiteralStack()
+  configure()
+
+  def configure(): Unit = {
+    predefCommands.add(CmdExtendRowDef())
+    predefCommands.add(CmdExtendColDef())
+    predefCommands.add(CmdDeleteRowDef())
+    predefCommands.add(CmdDeleteColDef())
+    predefCommands.add(CmdSetTileDef())
+    predefCommands.add(CmdInvertBoxGoalDef())
+    predefCommands.add(CmdMinimizeWallDef())
+    predefCommands.add(CmdFilterWallDef())
+    predefCommands.add(CmdFractalizeWallDef())
+    predefCommands.add(CmdValidateLevelDef())
+    predefCommands.add(CmdUndefDef())
+    predefCommands.add(CmdClearDef())
+  }
 
   def setGrid(grid: Grid): Boolean = {
     editorGrid = grid
@@ -56,18 +73,49 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
     change.apply(editorGrid)
   }
 
-  def clearUserCommands(): Unit = {
-    userCommands.clear()
+  def cmdLiteralStack: CmdLiteralStack = commandLiteralStack
+
+  def applyCmd(command: Cmd): Boolean = {
+    val change = command.apply(this)
+    if (change == GridChangeUnit) {
+      return true
+    }
+    undoStack.addAction(change)
   }
 
-  def applyCommand(command: CmdAction): Boolean = {
-    // TODO: check if something more needs to be done here
-    if (!command.valid(this)) {
+  def addUserCmdDef(command: Cmd): Boolean = {
+    command match {
+      case definition: CmdDef => // keep command definitions
+      case _ => return false
+    }
+    if (predefCommands.contains(command)) {
       return false
     }
+    userCommands.add(command)
+  }
 
-    val change = command.apply(this)
-    undoStack.addAction(change)
+  def getCmdDef(name: String): Cmd = {
+    val predefCmdDef = predefCommands.find(_.name == name)
+    if (predefCmdDef.isDefined) {
+      return predefCmdDef.get
+    }
+    val userCmdDef = userCommands.find(_.name == name)
+    if (predefCmdDef.isDefined) {
+      return predefCmdDef.get
+    }
+    CmdNone
+  }
+
+  def removeUserCmdDef(name: String): Boolean = {
+    val command = predefCommands.find(_.name == name)
+    if (command.isDefined) {
+      return false
+    }
+    userCommands.remove(command.get)
+  }
+
+  def clearUserCmdDefs(): Unit = {
+    userCommands.clear()
   }
 
   def checkAddTileBand(band: TileBandKind, idx: Int, count: Int): Boolean = {
@@ -106,7 +154,7 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
       }
     })
 
-    result
+    if (!result.isEmpty) result else GridChangeUnit
   }
 
   def checkMinimizeWall(): Boolean = {
@@ -133,7 +181,7 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
       }
     })
 
-    result
+    if (!result.isEmpty) result else GridChangeUnit
   }
 
   def checkFilterWall(pos: GridPosition, radius: Int): Boolean = {
@@ -157,7 +205,7 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
       /*breakOnReachingOutsideGrid*/ false
     )
 
-    result
+    if (!result.isEmpty) result else GridChangeUnit
   }
 
   def checkFractalizeWall(pos: GridPosition, origin: GridPosition): Boolean = {
@@ -199,7 +247,7 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
     //    val outerWall = ffOuter.surfaceLayer
     //
     //
-    //    // TODO: fractalize
+    //    // TODO:
     //    def addTileToResults(i: Int, j: Int, newTile: Tile): Unit = {
     //      if (i < editorGrid.size
     //      , j
@@ -226,7 +274,7 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
     //
     //
     //    result.undo(editorGrid)
-    result
+    if (!result.isEmpty) result else GridChangeUnit
   }
 
   // Doesn't check if the level is solvable.

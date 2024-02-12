@@ -1,6 +1,7 @@
 import scala.util.parsing.combinator.*
 
-class CmdParser extends RegexParsers {
+// TODO: use fastparse
+class CmdParser(private val gameAssets: GameAssets) extends RegexParsers {
   private def w: Parser[String] = """\s+""".r
 
   private def num: Parser[NumLiteral] = """0|[1-9]\d*""".r ^^ (value => NumLiteral(value.toInt))
@@ -24,41 +25,46 @@ class CmdParser extends RegexParsers {
   // Order is important.
   private def value: Parser[CmdLiteral] = pos | num | tile | ident
 
-  private def param: Parser[CmdParameter] = ident ~ ":" ~ """Num|Pos|Tile|Ident""".r ^^ {
-    case ident ~ ":" ~ "Num" => NumParameter(ident.value)
-    case ident ~ ":" ~ "Pos" => PosParameter(ident.value)
-    case ident ~ ":" ~ "Tile" => TileParameter(ident.value)
-    case ident ~ ":" ~ "Ident" => IdentParameter(ident.value)
+  private def param: Parser[CmdParam] = ident ~ ":" ~ """Num|Pos|Tile|Ident""".r ^^ {
+    case ident ~ ":" ~ "Num" => NumParam(ident.value)
+    case ident ~ ":" ~ "Pos" => PosParam(ident.value)
+    case ident ~ ":" ~ "Tile" => TileParam(ident.value)
+    case ident ~ ":" ~ "Ident" => IdentParam(ident.value)
   }
 
-  private def callCommand: Parser[CmdCall] = ident ~ "(" ~ repsep(value, ",") ~ ")" ^^ {
-    case name ~ "(" ~ literals ~ ")" => CmdCall(name.value, literals)
+  private def callCommand: Parser[CmdCallBase] = ident ~ "(" ~ repsep(value, ",") ~ ")" ^^ {
+    case name ~ "(" ~ literals ~ ")" =>
+      name.value match {
+        case "extendRow" => CmdExtendRow(literals)
+        case "extendCol" => CmdExtendCol(literals)
+        case "deleteRow" => CmdDeleteRow(literals)
+        case "deleteCol" => CmdDeleteCol(literals)
+        case "setTile" => CmdSetTile(literals)
+        case "invertBoxGoal" => CmdInvertBoxGoal(literals)
+        case "minimizeWall" => CmdMinimizeWall(literals)
+        case "filterWall" => CmdFilterWall(literals)
+        case "fractalizeWall" => CmdFractalizeWall(literals)
+        case "validateLevel" => CmdValidateLevel(literals)
+        case "undef" => CmdUndef(literals)
+        case "clear" => CmdClear(literals)
+        case _ => CmdCall(name.value, literals)
+      }
   }
 
   // TODO: account for whitespace between fn/tn and identifier
-  private def defineCommand: Parser[CmdDef] = "fn|tn".r ~ ident ~ "(" ~ repsep(param, ",") ~ ")" ~ "=" ~ repsep(callCommand, "") ^^ {
-    case "fn" ~ name ~ "(" ~ params ~ ")" ~ "=" ~ commands => CmdDef(name.value, params, commands, false)
-    case "tn" ~ name ~ "(" ~ params ~ ")" ~ "=" ~ commands => CmdDef(name.value, params, commands, true)
+  private def defineCommand: Parser[CmdDefBase] = "fn|tn".r ~ ident ~ "(" ~ repsep(param, ",") ~ ")" ~ "=" ~ repsep(callCommand, "") ^^ {
+    case "fn" ~ name ~ "(" ~ params ~ ")" ~ "=" ~ callCommands => CmdDef(name.value, params, callCommands, false)
+    case "tn" ~ name ~ "(" ~ params ~ ")" ~ "=" ~ callCommands => CmdDef(name.value, params, callCommands, true)
   }
 
   // Order is important.
-  private def language: Parser[CmdAction] = defineCommand | callCommand
+  private def language: Parser[Cmd] = defineCommand | callCommand
 
-  def parse(input: String): CmdAction = parseAll(language, input) match {
-    case Success(result, _) => result
-    case failure: NoSuccess => NoAction
+  def parse(input: String): Either[Cmd, String] = parseAll(language, input) match {
+    case Success(result, _) =>
+      val semaMessage = result.sema()
+      if (semaMessage.isEmpty) Left(result) else Right(semaMessage.get)
+    case failure: NoSuccess =>
+      Right(failure.msg)
   }
-}
-
-// TODO: remove
-object AAA extends App {
-  private val input0 = """aaa(box, pera, 1:3, 12)"""
-  private val input1 = """fn ident(param1: Num, param2: Pos) = xoo1(wall, param1) yoo2(param2) zar7(param1, param2, 5:6, pera)"""
-  private val input2 = """tn ident(param1: Num, param2: Pos) = xoo1(wall, param1) yoo2(param2) zar7(param1, param2, 5:6, pera)"""
-
-  private val parser = new CmdParser()
-
-  println(parser.parse(input0))
-  println(parser.parse(input1))
-  println(parser.parse(input2))
 }
