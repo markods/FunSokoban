@@ -3,7 +3,7 @@ sealed trait Cmd {
   def name: String
 
   // Empty option message if the semantic analysis succeeds.
-  def sema(): Option[String]
+  def sema(editor: Editor): Option[String]
 
   def apply(editor: Editor): GridChange
 }
@@ -11,7 +11,7 @@ sealed trait Cmd {
 case object CmdNone extends Cmd {
   def name: String = "CmdNone"
 
-  def sema(): Option[String] = Option("No command specified")
+  def sema(editor: Editor): Option[String] = Option("No command specified")
 
   def apply(editor: Editor): GridChange = GridChangeNone
 }
@@ -22,7 +22,7 @@ sealed abstract class CmdDefBase(cmdName: String,
                                  isTransaction: Boolean) extends Cmd {
   def name: String = cmdName
 
-  def sema(): Option[String] = {
+  def sema(editor: Editor): Option[String] = {
     // TODO:
     Option.empty
   }
@@ -37,7 +37,7 @@ sealed abstract class CmdCallBase(cmdName: String,
                                   literals: List[CmdLiteral]) extends Cmd {
   def name: String = cmdName
 
-  def sema(): Option[String] = {
+  def sema(editor: Editor): Option[String] = {
     // TODO:
     Option.empty
   }

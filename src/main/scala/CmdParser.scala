@@ -60,11 +60,8 @@ class CmdParser(private val gameAssets: GameAssets) extends RegexParsers {
   // Order is important.
   private def language: Parser[Cmd] = defineCommand | callCommand
 
-  def parse(input: String): Either[Cmd, String] = parseAll(language, input) match {
-    case Success(result, _) =>
-      val semaMessage = result.sema()
-      if (semaMessage.isEmpty) Left(result) else Right(semaMessage.get)
-    case failure: NoSuccess =>
-      Right(failure.msg)
+  def parse(input: String): Cmd = parseAll(language, input) match {
+    case Success(result, _) => result
+    case failure: NoSuccess => CmdNone
   }
 }

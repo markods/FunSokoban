@@ -33,8 +33,6 @@ final class MainPanel(private val jCanvas: Canvas,
   private val jCreate_LevelComboBoxModel: DefaultComboBoxModel[GameFile] = new DefaultComboBoxModel[GameFile]()
   private val jCreate_LevelComboBox: JComboBox[GameFile] = new JComboBox[GameFile]
   private val jCreate_DeleteButton: JButton = new JButton
-  private val jCreate_StatusLabel: JLabel = new JLabel
-  private val jCreate_StatusTextField: JTextField = new JTextField
   private val jCreate_ImportButton: JButton = new JButton
   private val jCreate_NameLabel: JLabel = new JLabel
   private val jCreate_NameTextField: JTextField = new JTextField
@@ -198,11 +196,6 @@ final class MainPanel(private val jCanvas: Canvas,
     jCreate_DeleteButton.setToolTipText("")
     jCreate_DeleteButton.addActionListener((evt: ActionEvent) => Create_DeleteLevel())
     jCreate_DeleteButton.addKeyListener(jCanvasKeyListener)
-    jCreate_StatusLabel.setText("Status")
-    jCreate_StatusTextField.setEditable(false)
-    jCreate_StatusTextField.setFocusable(false)
-    jCreate_StatusTextField.setMinimumSize(new Dimension(64, 32))
-    jCreate_StatusTextField.setPreferredSize(new Dimension(64, 32))
     jCreate_ImportButton.setText("Import")
     jCreate_ImportButton.addActionListener((evt: ActionEvent) => Create_ImportLevel())
     jCreate_ImportButton.addKeyListener(jCanvasKeyListener)
@@ -284,7 +277,7 @@ final class MainPanel(private val jCanvas: Canvas,
     jCreate_Panel.setLayout(jCreate_PanelLayout)
     jCreate_PanelLayout.setHorizontalGroup(
       jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-        .addComponent(jCreate_CommandHistoryScrollPane, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 418, Short.MaxValue)
+        .addComponent(jCreate_CommandHistoryScrollPane, javax.swing.GroupLayout.Alignment.TRAILING)
         .addComponent(jCreate_CommandTextScrollPane)
         .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jCreate_PanelLayout.createSequentialGroup()
           .addContainerGap()
@@ -298,16 +291,12 @@ final class MainPanel(private val jCanvas: Canvas,
                 .addGroup(jCreate_PanelLayout.createSequentialGroup()
                   .addComponent(jCreate_NameLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
                   .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                  .addComponent(jCreate_NameTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue))
-                .addGroup(jCreate_PanelLayout.createSequentialGroup()
-                  .addComponent(jCreate_StatusLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
-                  .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                  .addComponent(jCreate_StatusTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue)))
+                  .addComponent(jCreate_NameTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue)))
               .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
               .addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(jCreate_DeleteButton, javax.swing.GroupLayout.PREFERRED_SIZE, 75, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addComponent(jCreate_SaveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 75, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addComponent(jCreate_ImportButton, javax.swing.GroupLayout.PREFERRED_SIZE, 75, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addComponent(jCreate_DeleteButton)
+                .addComponent(jCreate_SaveButton)
+                .addComponent(jCreate_ImportButton)))
             .addGroup(jCreate_PanelLayout.createSequentialGroup()
               .addGap(44, 44, 44)
               .addComponent(jCreate_SetFloorButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -319,7 +308,7 @@ final class MainPanel(private val jCanvas: Canvas,
               .addComponent(jCreate_SetGoalButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
               .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
               .addComponent(jCreate_SetPlayerButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-              .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MaxValue)
+              .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 44, Short.MaxValue)
               .addComponent(jCreate_SetBoxGoalButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
               .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
               .addComponent(jCreate_SetPlayerGoalButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
@@ -337,10 +326,7 @@ final class MainPanel(private val jCanvas: Canvas,
               .addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addComponent(jCreate_NameLabel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addComponent(jCreate_NameTextField, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE))
-              .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-              .addGroup(jCreate_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(jCreate_StatusLabel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addComponent(jCreate_StatusTextField, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)))
+              .addGap(38, 38, 38))
             .addGroup(jCreate_PanelLayout.createSequentialGroup()
               .addComponent(jCreate_DeleteButton, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
               .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
@@ -389,6 +375,8 @@ final class MainPanel(private val jCanvas: Canvas,
   }
 
   private def ChangeTab(): Unit = {
+    // TODO: show modal if there is unfinished work in the create tab / if the player made some moves on the map
+
     var actorKind = ActorKind.Player
 
     gameState.synchronized {
@@ -595,6 +583,8 @@ final class MainPanel(private val jCanvas: Canvas,
   }
 
   private def Create_DeleteLevel(): Unit = {
+    // TODO: show modal to user to confirm
+
     val level = gameState.synchronized {
       val level = gameState.level
       gameState.setLevel(gameAssets.defaultLevel, new Grid(gameAssets.defaultGridSize, Tile.Floor))
@@ -691,6 +681,7 @@ final class MainPanel(private val jCanvas: Canvas,
     jCanvas.repaint()
   }
 
+  // TODO: add up/down key handlers that bring up command history
   private def Create_CommandTextAreaEnterTyped(): Unit = {
     try {
       val text = jCreate_CommandTextArea.getText()
@@ -699,20 +690,27 @@ final class MainPanel(private val jCanvas: Canvas,
         return
       }
 
-      val commandOrMessage = commandParser.parse(text)
-      commandOrMessage match {
-        case Left(command) =>
-          gameState.synchronized {
-            gameState.editor.applyCmd(command)
-          }
-        case Right(message) =>
-          jCreate_StatusLabel.setText(message)
+      val command = commandParser.parse(text)
+      if (command == CmdNone) {
+        return
+      }
+
+      val message = gameState.synchronized {
+        val msg = command.sema(gameState.editor)
+        if (msg.isEmpty) {
+          gameState.editor.applyCmd(command)
+        }
+        msg.getOrElse("")
       }
 
       val scrollBar = jCreate_CommandHistoryScrollPane.getVerticalScrollBar
       val isScrollBarAtBottom = scrollBar.getValue + scrollBar.getVisibleAmount == scrollBar.getMaximum
       jCreate_CommandHistoryTextArea.append("\n")
       jCreate_CommandHistoryTextArea.append(text)
+      if (!message.isBlank) {
+        jCreate_CommandHistoryTextArea.append("ERROR: ")
+        jCreate_CommandHistoryTextArea.append(message)
+      }
       if (isScrollBarAtBottom) {
         SwingUtilities.invokeLater(() => scrollBar.setValue(scrollBar.getMaximum - scrollBar.getVisibleAmount))
       }
