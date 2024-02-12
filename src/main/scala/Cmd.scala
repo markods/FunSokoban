@@ -28,8 +28,8 @@ sealed abstract class CmdDefBase(cmdName: String,
   }
 
   def apply(editor: Editor): GridChange = {
-    // TODO:
-    GridChangeNone
+    editor.addUserCmdDef(this)
+    GridChangeUnit
   }
 }
 

@@ -173,7 +173,7 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
       /*breakOnReachingOutsideGrid*/ true
     )
 
-    val ffOutside = getAreaOutsidePlayArea(ff.area, ff.surfaceLayer)
+    val ffOutside = getOuterArea(ff.area, ff.surfaceLayer)
     ffOutside.area.foreach(pos => {
       val tile = editorGrid.getTile(pos.i, pos.j)
       if (tile.isWall) {
@@ -218,62 +218,63 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
       return false
     }
 
-    // Check if the origin tile is surrounded by a wall.
-    val ff = editorGrid.floodFillFind(origin,
-      (i, j, tile) => (i == pos.i && j == pos.j) || !tile.isWall,
-      /*calculateSurfaceLayer*/ true,
-      /*breakOnReachingOutsideGrid*/ true
-    )
-    val originReachableAreaIsConfined = !ff.reachedOutsideGrid
-    if (!originReachableAreaIsConfined) {
-      return false
-    }
-
     true
   }
 
+  // Only adds a wall if it increases the play area.
   def fractalizeWallUnchecked(pos: GridPosition, origin: GridPosition): GridChange = {
     val result = new GridChangeList()
-    //    val m = editorGrid.size.m
-    //    val n = editorGrid.size.n
-    //
-    //    // May have holes.
-    //    val ffOrigin = editorGrid.floodFillFind(origin,
-    //      (i, j, tile) => (i == pos.i && j == pos.j) || !tile.isWall,
-    //      /*calculateSurfaceLayer*/ true,
-    //      /*breakOnReachingOutsideGrid*/ false
-    //    )
-    //    val ffOuter = getAreaOutsidePlayArea(ffOrigin.area, ffOrigin.surfaceLayer)
-    //    val outerWall = ffOuter.surfaceLayer
-    //
-    //
-    //    // TODO:
-    //    def addTileToResults(i: Int, j: Int, newTile: Tile): Unit = {
-    //      if (i < editorGrid.size
-    //      , j
-    //      ) )
-    //      {
-    //        val band: TileBandKind = TileBandKind.Row
-    //        result.addOne(new BandChange(band, bi, bj, 1))
-    //        bandChange.apply()
-    //
-    //      }
-    //
-    //      result.addOne(new TileChange(i, j, editorGrid.getTile(i, j), newTile))
-    //    }
-    //
-    //    addTileToResults(i, j, Tile.Floor)
-    //
-    //    val upPos = new GridPosition(pos.i - 1, pos.j - 1)
-    //    val downPos = new GridPosition(pos.i - 1, pos.j - 1)
-    //    val leftPos = new GridPosition(pos.i - 1, pos.j - 1)
-    //    val rightPos = new GridPosition(pos.i - 1, pos.j - 1)
-    //
-    //
-    //    result.apply(editorGrid)
-    //
-    //
-    //    result.undo(editorGrid)
+    val gridSize = editorGrid.size
+
+    // May have holes/reach end of grid.
+    val ffOrigin = editorGrid.floodFillFind(origin,
+      (i, j, tile) => (i == pos.i && j == pos.j) || !tile.isWall,
+      /*calculateSurfaceLayer*/ true,
+      /*breakOnReachingOutsideGrid*/ false
+    )
+    val ffOuter = getOuterArea(ffOrigin.area, ffOrigin.surfaceLayer)
+
+    // Possibly need to extend play area.
+    if (pos.i == 0) {
+      result.addOne(addTileBandUnchecked(TileBandKind.Column, 0, 1))
+      // We don't actually extend the play area here, so we don't need to update pos.i.
+    }
+    if (pos.i == gridSize.m - 1) {
+      result.addOne(addTileBandUnchecked(TileBandKind.Column, gridSize.m, 1))
+    }
+    if (pos.j == 0) {
+      result.addOne(addTileBandUnchecked(TileBandKind.Column, 0, 1))
+      // We don't actually extend the play area here, so we don't need to update pos.j.
+    }
+    if (pos.j == gridSize.n - 1) {
+      result.addOne(addTileBandUnchecked(TileBandKind.Column, gridSize.n, 1))
+    }
+
+
+    def maybeAddWallToResults(pos: GridPosition): Unit = {
+      // Add a wall if this position is in one of the newly added rows/columns.
+      if (!grid.validPosition(pos.i, pos.j)) {
+        result.addOne(new TileChange(pos.i, pos.j, Tile.Floor, Tile.Wall))
+        return
+      }
+      // Add a wall if this position is not inside the origin area, as we shouldn't reduce its size.
+      if (ffOuter.area.contains(pos) || ffOuter.surfaceLayer.contains(pos)) {
+        result.addOne(new TileChange(pos.i, pos.j, editorGrid.getTile(pos.i, pos.j), Tile.Wall))
+      }
+    }
+
+    // Plus.
+    maybeAddWallToResults(new GridPosition(position.i - 1, position.j))
+    maybeAddWallToResults(new GridPosition(position.i + 1, position.j))
+    maybeAddWallToResults(new GridPosition(position.i, position.j - 1))
+    maybeAddWallToResults(new GridPosition(position.i, position.j + 1))
+    // Diagonals.
+    maybeAddWallToResults(new GridPosition(position.i - 1, position.j - 1))
+    maybeAddWallToResults(new GridPosition(position.i + 1, position.j + 1))
+    maybeAddWallToResults(new GridPosition(position.i + 1, position.j - 1))
+    maybeAddWallToResults(new GridPosition(position.i - 1, position.j + 1))
+
+
     if (!result.isEmpty) result else GridChangeUnit
   }
 
@@ -333,19 +334,19 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
 
   private def checkPlayAreaOuterLayerSolidWall(playerReachableArea: mutable.HashSet[GridPosition],
                                                outOfReachSurfaceLayer: mutable.HashSet[GridPosition]): Boolean = {
-    val ffOuter = getAreaOutsidePlayArea(playerReachableArea, outOfReachSurfaceLayer)
+    val ffOuter = getOuterArea(playerReachableArea, outOfReachSurfaceLayer)
     val isSolid = ffOuter.surfaceLayer.forall(pos => editorGrid.getTile(pos.i, pos.j).isWall)
     isSolid
   }
 
-  private def getAreaOutsidePlayArea(playerReachableArea: mutable.HashSet[GridPosition],
-                                     outOfReachSurfaceLayer: mutable.HashSet[GridPosition]
-                                    ): FloodFillResult = {
+  private def getOuterArea(originArea: mutable.HashSet[GridPosition],
+                           originSurfaceLayer: mutable.HashSet[GridPosition]
+                          ): FloodFillResult = {
     val tempPos = new GridPosition(0, 0)
     val firstFloorOutsidePosOption = editorGrid.findFirst((i, j, tile) => {
       tempPos.i = i
       tempPos.j = j
-      tile.isFloor && !playerReachableArea.contains(tempPos)
+      tile.isFloor && !originArea.contains(tempPos)
     })
     if (firstFloorOutsidePosOption.isEmpty) {
       return new FloodFillResult()
@@ -358,14 +359,14 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
       (i, j, tile) => {
         tempPos.i = i
         tempPos.j = j
-        !playerReachableArea.contains(tempPos)
+        !originArea.contains(tempPos)
       },
       /*calculateSurfaceLayer*/ false,
       /*breakOnReachingOutsideGrid*/ false
     )
 
     val result = new FloodFillResult()
-    result.surfaceLayer.addAll(ffOutside.area.intersect(outOfReachSurfaceLayer))
+    result.surfaceLayer.addAll(ffOutside.area.intersect(originSurfaceLayer))
     result.area.addAll(ffOutside.area.diff(result.surfaceLayer))
     result.reachedOutsideGrid = ffOutside.reachedOutsideGrid
 
