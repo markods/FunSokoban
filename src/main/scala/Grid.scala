@@ -128,10 +128,10 @@ final class Grid(private val gs: GridSize,
     unvisited.append(pos)
 
     def appendUnvisited(position: GridPosition): Unit = {
-      if (validPosition(position.i, position.j) && !ff.area.contains(position)) {
-        unvisited.append(position)
-      } else {
+      if (!validPosition(position.i, position.j)) {
         ff.reachedOutsideGrid = true
+      } else if (!ff.area.contains(position)) {
+        unvisited.append(position)
       }
     }
 
@@ -146,12 +146,11 @@ final class Grid(private val gs: GridSize,
       if (unvisited.isEmpty) {
         return
       }
-
       val position = unvisited.removeHead(/*resizeInternalRepr*/ true)
-      ff.area.add(position)
-
       val tile = getTile(position.i, position.j)
+
       if (onInside(position.i, position.j, tile)) {
+        ff.area.add(position)
         // Plus.
         appendUnvisited(new GridPosition(position.i - 1, position.j))
         appendUnvisited(new GridPosition(position.i + 1, position.j))
@@ -160,15 +159,15 @@ final class Grid(private val gs: GridSize,
       }
       else if (calculateSurfaceLayer) {
         // Plus.
-        appendUnvisited(new GridPosition(position.i - 1, position.j))
-        appendUnvisited(new GridPosition(position.i + 1, position.j))
-        appendUnvisited(new GridPosition(position.i, position.j - 1))
-        appendUnvisited(new GridPosition(position.i, position.j + 1))
+        appendOuterLayer(new GridPosition(position.i - 1, position.j))
+        appendOuterLayer(new GridPosition(position.i + 1, position.j))
+        appendOuterLayer(new GridPosition(position.i, position.j - 1))
+        appendOuterLayer(new GridPosition(position.i, position.j + 1))
         // Diagonals.
-        appendUnvisited(new GridPosition(position.i - 1, position.j - 1))
-        appendUnvisited(new GridPosition(position.i + 1, position.j + 1))
-        appendUnvisited(new GridPosition(position.i + 1, position.j - 1))
-        appendUnvisited(new GridPosition(position.i - 1, position.j + 1))
+        appendOuterLayer(new GridPosition(position.i - 1, position.j - 1))
+        appendOuterLayer(new GridPosition(position.i + 1, position.j + 1))
+        appendOuterLayer(new GridPosition(position.i + 1, position.j - 1))
+        appendOuterLayer(new GridPosition(position.i - 1, position.j + 1))
       }
 
       if (ff.reachedOutsideGrid && breakOnReachingOutsideGrid) {

@@ -31,7 +31,7 @@ sealed abstract class CmdDefBase extends Cmd {
     // Check that another command with the same name doesn't already exist.
     val cmdDef = this
     if (editor.getCmdDef(cmdDef.name) != CmdNone) {
-      return s"Command ${cmdDef.name} already exists"
+      return s"def.${cmdDef.name}: command ${cmdDef.name} already exists"
     }
 
     // Check that parameter names are not keywords and are all different.
@@ -41,15 +41,15 @@ sealed abstract class CmdDefBase extends Cmd {
 
     def ensureValidParameter(param: CmdParam): Boolean = {
       if (param == NoneParam) {
-        error = s"Definition ${cmdDef.name}: invalid syntax at position $i"
+        error = s"def.${cmdDef.name}: invalid syntax at parameter.$i"
         return false
       }
       if (editor.isKeyword(param.name)) {
-        error = s"Definition ${cmdDef.name}: parameter $i cannot be keyword"
+        error = s"def.${cmdDef.name}: parameter ${param.name}.$i is a keyword"
         return false
       }
       if (cmdDefParamNameToIndex.contains(param.name)) {
-        error = s"Definition ${cmdDef.name}: parameter $i has the same name as a previous parameter"
+        error = s"def.${cmdDef.name}: parameter ${param.name}.$i has the same name as a previous parameter"
         return false
       }
       cmdDefParamNameToIndex.addOne((param.name, i))
@@ -64,7 +64,7 @@ sealed abstract class CmdDefBase extends Cmd {
 
     // Check that there is at least one command call in the definition.
     if (cmdDef.commands.isEmpty) {
-      return s"Definition ${cmdDef.name} must call at least one other command"
+      return s"def.${cmdDef.name}: ${cmdDef.name} must call at least one command"
     }
 
     // Check that all command calls are valid.
@@ -72,9 +72,9 @@ sealed abstract class CmdDefBase extends Cmd {
     var j = 0
     val cmdDefUsedParamNames = mutable.HashSet[String]()
 
-    def ensureValidArgumentForCall(param: CmdParam, literal: CmdLiteral): Boolean = {
+    def ensureValidArgumentForCall(call: CmdCallBase, param: CmdParam, literal: CmdLiteral): Boolean = {
       if (literal == NoneLiteral) {
-        error = s"Call $i.${cmdDef.name}: invalid syntax at position $j"
+        error = s"call.${call.name}.$i: invalid syntax at position.$j"
         return false
       }
       if (literal.kind == ValueKind.Ident) {
@@ -85,34 +85,39 @@ sealed abstract class CmdDefBase extends Cmd {
         if (identLiteral.isOuterParameter) {
           val outerParam = cmdDef.params(idxInOuterFrame)
           if (outerParam.kind != param.kind) {
-            error = s"Call $i.${cmdDef.name}: provided argument and parameter kinds don't match at position $j"
+            error = s"call.${call.name}.$i: argument and parameter.$j kinds aren't the same (provided: ${outerParam.kind}, expected: ${param.kind})"
             return false
           }
           cmdDefUsedParamNames.add(outerParam.name)
+          return true
         }
       }
       if (literal.kind != param.kind) {
-        error = s"Call $i.${cmdDef.name}: literal and parameter kinds don't match at position $j"
+        error = s"call.${call.name}.$i: literal and parameter.$j kinds aren't the same (provided: ${literal.kind}, expected: ${param.kind})"
         return false
       }
-      i += 1
+      j += 1
       true
     }
 
     def ensureValidCall(call: CmdCallBase): Boolean = {
       if (call.name == cmdDef.name) {
-        error = s"Call $i.${call.name}: recursion isn't supported"
+        error = s"call.${call.name}.$i: recursion isn't supported"
+        return false
+      }
+      if (editor.isKeyword(call.name)) {
+        error = s"call.${call.name}.$i: ${call.name} can not be called inside another command"
         return false
       }
 
       val callDefOrNone = editor.getCmdDef(call.name)
       if (callDefOrNone == CmdNone) {
-        error = s"Call $i.${call.name}: no command exists with the name ${call.name}"
+        error = s"call.${call.name}.$i: no command exists with the name ${call.name}"
         return false
       }
 
       val callDef = callDefOrNone.asInstanceOf[CmdDefBase]
-      callDef.params.zip(call.literals).forall(ensureValidArgumentForCall)
+      callDef.params.zip(call.literals).forall((param, literal) => ensureValidArgumentForCall(call, param, literal))
       if (!error.isBlank) {
         return false
       }
@@ -132,7 +137,7 @@ sealed abstract class CmdDefBase extends Cmd {
 
     def checkAllParamsUsed(param: CmdParam): Boolean = {
       if (!cmdDefUsedParamNames.contains(param.name)) {
-        error = s"Definition ${cmdDef.name}: unused parameter at position $i"
+        error = s"def.${cmdDef.name}: unused parameter.$i"
         return false
       }
       i += 1
@@ -163,12 +168,12 @@ sealed abstract class CmdCallBase extends Cmd {
 
     val cmdDefOrNone = editor.getCmdDef(cmdCall.name)
     if (cmdDefOrNone == CmdNone) {
-      return s"No command exists with the name ${cmdCall.name}"
+      return s"call.${cmdCall.name}: no command exists with the name ${cmdCall.name}"
     }
 
     val cmdDef = cmdDefOrNone.asInstanceOf[CmdDefBase]
     if (cmdDef.params.size != cmdCall.literals.size) {
-      return s"Call ${cmdCall.name}: the number of parameters (${cmdDef.params.size}) and provided arguments (${cmdCall.literals.size}) don't match"
+      return s"call.${cmdCall.name}: the number of parameters (${cmdDef.params.size}) and provided arguments (${cmdCall.literals.size}) don't match"
     }
 
     var error = ""
@@ -176,16 +181,16 @@ sealed abstract class CmdCallBase extends Cmd {
 
     def ensureValidLiteral(param: CmdParam, literal: CmdLiteral): Boolean = {
       if (literal == NoneLiteral) {
-        error = s"Call ${cmdCall.name}: invalid syntax at position $i"
+        error = s"call.${cmdCall.name}: invalid syntax at argument.$i"
         return false
       }
       // Command call should only deal with literal values.
       if (literal.kind == ValueKind.Ident && !literal.asInstanceOf[IdentLiteral].isStringLiteral) {
-        error = s"Call ${cmdCall.name}: literal and parameter kinds don't match at position $i"
+        error = s"call.${cmdCall.name}: unknown argument.$i"
         return false
       }
       if (literal.kind != param.kind) {
-        error = s"Call ${cmdCall.name}: literal and parameter kinds don't match at position $i"
+        error = s"call.${cmdCall.name}: literal and parameter.$i kinds aren't the same (provided: ${literal.kind}, expected: ${param.kind})"
         return false
       }
       i += 1
@@ -228,12 +233,10 @@ sealed abstract class CmdCallBase extends Cmd {
         return false
       }
       // Apply change to the grid here. We'll undo all changes and return a single change list from them.
-      editor.applyChange(change)
-
-      val success = gridChange.addAll(change)
-      if (!success) {
+      if (!editor.applyChange(change)) {
         return false
       }
+      gridChange.addAll(change)
       if (change != GridChangeUnit) {
         nonUnitSuccessCount += 1
       }
@@ -427,7 +430,7 @@ final case class CmdSetTileDef() extends CmdPreDef("setTile", List[CmdParam](Pos
 
 final case class CmdInvertBoxGoalDef() extends CmdPreDef("invertBoxGoal", List[CmdParam]())
 
-final case class CmdMinimizeWallDef() extends CmdPreDef("minimizeWall", List[CmdParam](PosParam("pos")))
+final case class CmdMinimizeWallDef() extends CmdPreDef("minimizeWall", List[CmdParam]())
 
 final case class CmdFilterWallDef() extends CmdPreDef("filterWall", List[CmdParam](PosParam("pos"), NumParam("n")))
 

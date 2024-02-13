@@ -29,6 +29,8 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
     keywords.add("Pos")
     keywords.add("Tile")
     keywords.add("Ident")
+    keywords.add("undef")
+    keywords.add("clear")
   }
 
   def setGrid(grid: Grid): Boolean = {
@@ -125,15 +127,15 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
       return predefCmdDef.get
     }
     val userCmdDef = userCommands.find(_.name == name)
-    if (predefCmdDef.isDefined) {
-      return predefCmdDef.get
+    if (userCmdDef.isDefined) {
+      return userCmdDef.get
     }
     CmdNone
   }
 
   def removeUserCmdDef(name: String): Boolean = {
-    val command = predefCommands.find(_.name == name)
-    if (command.isDefined) {
+    val command = userCommands.find(_.name == name)
+    if (command.isEmpty) {
       return false
     }
     userCommands.remove(command.get)
@@ -220,7 +222,7 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
       (i, j, tile) => {
         val distX = j - pos.j
         val distY = i - pos.i
-        val isInRadius = distY * distY + distX * distX <= radius * radius
+        val isInRadius = distY * distY + distX * distX < radius * radius
         if (isInRadius && tile.isWall) {
           result.addOne(new TileChange(i, j, tile, Tile.Floor))
         }

@@ -24,6 +24,14 @@ final class GridChangeList extends GridChange {
 
   def isEmpty: Boolean = gridChange.isEmpty
 
+  def foreach[U](f: GridChange => U): Unit = {
+    gridChange.foreach(f)
+  }
+
+  def forall(p: GridChange => Boolean): Boolean = {
+    gridChange.forall(p)
+  }
+
   def addOne(change: GridChange): Boolean = {
     if (change == GridChangeNone) {
       return false
@@ -39,12 +47,12 @@ final class GridChangeList extends GridChange {
     val success = changes match {
       case changeList: GridChangeList =>
         var addAllSuccess = true
-        gridChange.foreach(change => {
+        changeList.foreach(change => {
           addAllSuccess = addAllSuccess && addOne(change)
         })
         addAllSuccess
       case change: GridChange =>
-        gridChange.addOne(change)
+        addOne(change)
         true
     }
     success
