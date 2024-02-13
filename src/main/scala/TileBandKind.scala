@@ -1,6 +1,10 @@
 enum TileBandKind:
   case Row, Column
 
+  def isRow: Boolean = this == Row
+
+  def isColumn: Boolean = this == Column
+
   def unitVectorY: Int = this match
     case Row => 1
     case _ => 0

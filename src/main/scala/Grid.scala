@@ -24,9 +24,15 @@ final class Grid(private val gs: GridSize,
   // Unchecked.
   def getTile(i: Int, j: Int): Tile = tiles(gs.n * i + j)
 
+  def getTile(nij: Int): Tile = tiles(nij)
+
   // Unchecked.
   def setTile(i: Int, j: Int, tile: Tile): Unit = {
     tiles(gs.n * i + j) = tile
+  }
+
+  def setTile(nij: Int, tile: Tile): Unit = {
+    tiles(nij) = tile
   }
 
   // 1 -> 2 ->
@@ -35,6 +41,13 @@ final class Grid(private val gs: GridSize,
     val tileB: Tile = getTile(i2, j2)
     setTile(i1, j1, tileB)
     setTile(i2, j2, tileA)
+  }
+
+  def rotateTiles(nij1: Int, nij2: Int): Unit = {
+    val tileA: Tile = getTile(nij1)
+    val tileB: Tile = getTile(nij2)
+    setTile(nij1, tileB)
+    setTile(nij2, tileA)
   }
 
   // Right: 1 -> 2 -> 3 ->
@@ -178,19 +191,32 @@ final class Grid(private val gs: GridSize,
   // count > 0: idx in [0, axisLen]
   // count < 0: idx in [0, axisLen - 1]
   def checkAddOrRemoveTileBand(band: TileBandKind, idx: Int, count: Int): Boolean = {
-    val isAdd = count >= 0
+    // Area in original/destination grid in which changes will happen. All bounds inclusive.
+    // Original if we're removing bands.  <- WE'RE HERE, as adding is easier to check.
+    // Destination if we're adding bands.
+    // Col: (0, idx) -> (m-1, idx + abs(count)-1)
+    // Row: (idx, 0) -> (idx + abs(count)-1, n-1)
+    val upBound = band.unitVectorY * idx
+    val leftBound = band.unitVectorX * idx
+    val downBound = if (band.isRow) idx + Math.abs(count) - 1 else gs.m - 1
+    val rightBound = if (band.isColumn) idx + Math.abs(count) - 1 else gs.n - 1
 
-    // First outside row/column is a valid location to add more rows/columns.
-    val iUp = band.unitVectorY * idx
-    val jLeft = band.unitVectorX * idx
-    if ((isAdd && !validBandAddPosition(iUp, jLeft)) || !validPosition(iUp, jLeft)) {
+    val isAdd = count >= 0
+    // Check row/column addition.
+    // Note that the first outside row/column is a valid location to add more rows/columns.
+    if (isAdd) {
+      val isValidAddPosition = validBandAddPosition(upBound, leftBound)
+      return isValidAddPosition
+    }
+
+    // Check row/column removal.
+    if (!validPosition(upBound, leftBound) || !validPosition(downBound, rightBound)) {
       return false
     }
-    if (isAdd) return true
-
-    // Can't remove more rows/colums than there are.
-    if ((band == TileBandKind.Row && -count >= gs.m) ||
-      (band == TileBandKind.Column && -count >= gs.n)) {
+    // Should not remove all rows/columns.
+    if ((band.isRow && downBound + 1 - upBound == gs.m) ||
+      (band.isColumn && rightBound + 1 - leftBound == gs.n)
+    ) {
       return false
     }
 
@@ -204,47 +230,88 @@ final class Grid(private val gs: GridSize,
       return
     }
 
-    val m = gs.m
-    val n = gs.n
-    val deltaY = band.unitVectorY * count
-    val deltaX = band.unitVectorX * count
-    val tileDiff = if (band == TileBandKind.Row) count * n else m * count
+    val gsSrc = new GridSize(gs.m, gs.n)
+    val gsDst = new GridSize(gs.m + band.unitVectorY * count, gs.n + band.unitVectorX * count)
+    val gsMax = new GridSize(Math.max(gsSrc.m, gsDst.m), Math.max(gsSrc.n, gsDst.n))
+    val gsSrcMN = gsSrc.m * gsSrc.n
+    val gsDstMN = gsDst.m * gsDst.n
+    val tileDiff = if (band.isRow) count * gsSrc.n else gsSrc.m * count
 
-    // Add tiles if requested.
+    // Area in original/destination grid in which changes will happen. All bounds inclusive.
+    // Original if we're removing bands.
+    // Destination if we're adding bands.
+    // Col: (0, idx) -> (m-1, idx + abs(count)-1)
+    // Row: (idx, 0) -> (idx + abs(count)-1, n-1)
+    val upBound = band.unitVectorY * idx
+    val leftBound = band.unitVectorX * idx
+    val downBound = if (band.isRow) idx + Math.abs(count) - 1 else gsMax.m - 1
+    val rightBound = if (band.isColumn) idx + Math.abs(count) - 1 else gsMax.n - 1
+
+
+    // Add tiles if needed.
     if (tileDiff > 0) {
-      gs.m += deltaY
-      gs.n += deltaX
       appendTiles(tileDiff)
+    }
 
-      // No work if we want to insert below/right of the last row/column.
-      if ((band == TileBandKind.Row && idx == m) ||
-        (band == TileBandKind.Column && idx == n)) {
-        return
+    if (tileDiff < 0) {
+      // Remove: source grid. Left to right, up to down movement to avoid overwriting.
+      var nijSrc = 0
+      var nijDst = 0
+      val inc = 1
+      val skipInc = inc * (if (band.isRow) gsMax.n - 1 else Math.abs(count) - 1)
+
+      var shouldContinue = true
+      while (shouldContinue) {
+        val iSrc = nijSrc / gsSrc.n
+        val jSrc = nijSrc % gsSrc.n
+
+        if (iSrc < upBound || iSrc > downBound || jSrc < leftBound || jSrc > rightBound) {
+          // We're outside the no-swap area in the source grid.
+          rotateTiles(nijSrc, nijDst)
+          nijDst += inc
+        } else {
+          // Skip over the no-swap area.
+          nijSrc += skipInc
+        }
+
+        nijSrc += inc
+        shouldContinue = nijSrc >= 0 && nijSrc < gsSrcMN
+      }
+    }
+    else {
+      // Add: destination grid. Right to left, down to up movement to avoid overwriting.
+      var nijSrc = gsSrc.m * gsSrc.n - 1
+      var nijDst = gsDst.m * gsDst.n - 1
+      val inc = -1
+      val skipInc = inc * (if (band.isRow) gsMax.n - 1 else Math.abs(count) - 1)
+
+      var shouldContinue = true
+      while (shouldContinue) {
+        val iDst = nijDst / gsDst.n
+        val jDst = nijDst % gsDst.n
+
+        if (iDst < upBound || iDst > downBound || jDst < leftBound || jDst > rightBound) {
+          // We're outside the no-swap area in the destination grid.
+          rotateTiles(nijSrc, nijDst)
+          nijSrc += inc
+        } else {
+          // Skip over the no-swap area.
+          nijDst += skipInc
+        }
+
+        nijDst += inc
+        shouldContinue = nijDst >= 0 && nijDst < gsDstMN
       }
     }
 
-    // Source moves on the original grid. All bounds are inclusive.
-    val srcUpBound = band.unitVectorY * (idx + Math.max(0, -count))
-    val srcDownBound = m - 1
-    val srcLeftBound = band.unitVectorX * (idx + Math.max(0, -count))
-    val srcRightBound = n - 1
-    // Add: Right to left, down to up swap to avoid overwriting.
-    // Remove: Left to Right, up to down swap to avoid overwriting.
-    val iSrcRange = if (tileDiff > 0) srcDownBound to srcUpBound else srcUpBound to srcDownBound
-    val jSrcRange = if (tileDiff > 0) srcRightBound to srcLeftBound else srcLeftBound to srcRightBound
-
-    for (iSrc <- iSrcRange; jSrc <- jSrcRange) {
-      val iDst = iSrc + deltaY
-      val jDst = jSrc + deltaX
-      rotateTiles(iDst, jDst, iSrc, jSrc)
-    }
-
-    // Remove tiles if requested. Count is negative here.
+    // Remove tiles if needed.
     if (tileDiff < 0) {
-      gs.m += deltaY
-      gs.n += deltaX
       dropRightInPlaceTiles(-tileDiff)
     }
+
+    // Update the grid size.
+    gs.m = gsDst.m
+    gs.n = gsDst.n
   }
 
   private def appendTiles(count: Int): Unit = {

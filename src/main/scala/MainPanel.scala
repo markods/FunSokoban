@@ -7,6 +7,7 @@ import javax.swing.event.{ChangeEvent, ChangeListener}
 final class MainPanel(private val jCanvas: Canvas,
                       private val gameAssets: GameAssets,
                       private val gameState: GameState,
+                      private val solver: Solver,
                       private val commandParser: CmdParser) extends JPanel {
   private val jTabbedPane: JTabbedPane = new JTabbedPane
 
@@ -270,6 +271,16 @@ final class MainPanel(private val jCanvas: Canvas,
     jCreate_CommandTextAreaKeymap.addActionForKeyStroke(KeyCombo.Enter.keyStroke, new AbstractAction() {
       override def actionPerformed(evt: ActionEvent): Unit = {
         Create_CommandTextAreaEnterTyped()
+      }
+    })
+    jCreate_CommandTextAreaKeymap.addActionForKeyStroke(KeyCombo.CtrlZ.keyStroke, new AbstractAction() {
+      override def actionPerformed(evt: ActionEvent): Unit = {
+        UndoRedoKeyPressed(KeyCombo.CtrlZ)
+      }
+    })
+    jCreate_CommandTextAreaKeymap.addActionForKeyStroke(KeyCombo.CtrlY.keyStroke, new AbstractAction() {
+      override def actionPerformed(evt: ActionEvent): Unit = {
+        UndoRedoKeyPressed(KeyCombo.CtrlY)
       }
     })
     jCreate_CommandTextScrollPane.setViewportView(jCreate_CommandTextArea)
@@ -548,7 +559,28 @@ final class MainPanel(private val jCanvas: Canvas,
   }
 
   private def Play_SolveLevel(): Unit = {
-    // TODO:
+    val gridCopy = synchronized {
+      gameState.grid.copy()
+    }
+
+    val moves = solver.solve(gridCopy)
+    if (moves.size == 0) {
+      return
+    }
+
+    gameState.synchronized {
+      // Reset board.
+      val grid = readLevelFromFile(gameState.level)
+      if (grid.isEmpty) {
+        return
+      }
+      gameState.setLevel(gameState.level, grid.get)
+
+      // Do all moves until one fails.
+      val player = gameState.player
+      while (player.move(moves.redoAction())) {}
+      player.undoRedo(-player.moveNumber)
+    }
   }
 
   private def CanvasPanelKeyPressed(evt: KeyEvent): Unit = {
@@ -568,6 +600,26 @@ final class MainPanel(private val jCanvas: Canvas,
             case _ => PlayerAction.None
           }
           canvasChanged = gameState.actor.move(playerAction)
+        case KeyCombo.CtrlZ =>
+          canvasChanged = gameState.actor.undo()
+        case KeyCombo.CtrlY =>
+          canvasChanged = gameState.actor.redo()
+        case _ =>
+      }
+      moveNumber = gameState.actor.moveNumber
+    }
+    jPlay_MovesTextField.setText(moveNumber.toString)
+    if (canvasChanged) {
+      jCanvas.repaint()
+    }
+  }
+
+  private def UndoRedoKeyPressed(keyCombo: KeyCombo): Unit = {
+    var canvasChanged = false
+    var moveNumber = 0
+
+    gameState.synchronized {
+      keyCombo match {
         case KeyCombo.CtrlZ =>
           canvasChanged = gameState.actor.undo()
         case KeyCombo.CtrlY =>
@@ -676,11 +728,15 @@ final class MainPanel(private val jCanvas: Canvas,
       if (!editor.checkSetTile(editor.position, tile)) {
         return
       }
+      if (tile == editor.grid.getTile(editor.position.i, editor.position.j)) {
+        return
+      }
       editor.applyChange(editor.setTileUnchecked(editor.position, tile))
     }
     jCanvas.repaint()
   }
 
+  // TODO: correctly handle pasting multiline text or text containing tabs (get the first line and remove tabs)
   // TODO: add up/down key handlers that bring up command history
   private def Create_CommandTextAreaEnterTyped(): Unit = {
     val text = try {
@@ -692,34 +748,45 @@ final class MainPanel(private val jCanvas: Canvas,
       return
     }
 
-    val message = parseCommandAndRun(text)
+    val (success, message) = parseCommandAndRun(text)
+    jCanvas.repaint()
 
+    if (success) {
+      jCreate_CommandTextArea.setText("")
+    }
     val scrollBar = jCreate_CommandHistoryScrollPane.getVerticalScrollBar
     val isScrollBarAtBottom = scrollBar.getValue + scrollBar.getVisibleAmount == scrollBar.getMaximum
-    jCreate_CommandHistoryTextArea.append(text)
+    if (!message.isBlank) {
+      jCreate_CommandHistoryTextArea.append(message)
+    } else {
+      jCreate_CommandHistoryTextArea.setText(gameAssets.initialCommandHistory)
+    }
     if (isScrollBarAtBottom) {
       SwingUtilities.invokeLater(() => scrollBar.setValue(scrollBar.getMaximum - scrollBar.getVisibleAmount))
     }
   }
 
-  private def parseCommandAndRun(input: String): String = {
+  private def parseCommandAndRun(input: String): (Boolean, String) = {
     val (command, parseMessage) = commandParser.parse(input)
     if (!parseMessage.isBlank) {
-      return s"\nERR: $parseMessage"
+      return (false, s"\n$$ $input\n[ERR] $parseMessage")
     }
 
     gameState.synchronized {
       val semaMessage = command.sema(gameState.editor)
       if (semaMessage.nonEmpty) {
-        return s"\n$input\nERR: $semaMessage"
+        return (false, s"\n$$ $input\n[ERR] $semaMessage")
       }
 
       val success = gameState.editor.applyCmd(command)
       if (!success) {
-        return s"\n$input\nCommand execution failed"
+        return (false, s"\n$$ $input\nCommand execution failed")
       }
 
-      s"$input"
+      command match {
+        case clearCmd: CmdClear => (true, "")
+        case _ => (true, s"\n$$ $input")
+      }
     }
   }
 }

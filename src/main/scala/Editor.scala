@@ -6,13 +6,14 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
   private val predefCommands: mutable.Set[Cmd] = mutable.Set()
   private val userCommands: mutable.Set[Cmd] = mutable.Set()
   private val commandLiteralStack: CmdLiteralStack = new CmdLiteralStack()
+  private val keywords: mutable.Set[String] = mutable.Set()
   configure()
 
   def configure(): Unit = {
-    predefCommands.add(CmdExtendRowDef())
-    predefCommands.add(CmdExtendColDef())
-    predefCommands.add(CmdDeleteRowDef())
-    predefCommands.add(CmdDeleteColDef())
+    predefCommands.add(CmdAddRowDef())
+    predefCommands.add(CmdAddColDef())
+    predefCommands.add(CmdRemoveRowDef())
+    predefCommands.add(CmdRemoveColDef())
     predefCommands.add(CmdSetTileDef())
     predefCommands.add(CmdInvertBoxGoalDef())
     predefCommands.add(CmdMinimizeWallDef())
@@ -21,6 +22,13 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
     predefCommands.add(CmdValidateLevelDef())
     predefCommands.add(CmdUndefDef())
     predefCommands.add(CmdClearDef())
+
+    keywords.add("fn")
+    keywords.add("tn")
+    keywords.add("Num")
+    keywords.add("Pos")
+    keywords.add("Tile")
+    keywords.add("Ident")
   }
 
   def setGrid(grid: Grid): Boolean = {
@@ -75,9 +83,20 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
     if (!change.applyChange(editorGrid)) {
       return false
     }
+
+    // If we removed rows/cols, we may need to reposition the editor.
+    if (position.i >= grid.size.m) {
+      position.i = grid.size.m - 1
+    }
+    if (position.j >= grid.size.n) {
+      position.j = grid.size.n - 1
+    }
+
     undoStack.addAction(change)
     true
   }
+
+  def isKeyword(name: String): Boolean = keywords.contains(name)
 
   def cmdLiteralStack: CmdLiteralStack = commandLiteralStack
 
@@ -137,7 +156,7 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
   }
 
   def removeTileBandUnchecked(band: TileBandKind, idx: Int, count: Int): GridChange = {
-    new BandChange(band, idx, count)
+    new BandChange(band, idx, -count)
   }
 
   def checkSetTile(pos: GridPosition, tile: Tile): Boolean = {

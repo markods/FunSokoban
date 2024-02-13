@@ -52,7 +52,7 @@ final class GridSerializer extends Serializer[Grid] {
       return Option.empty
     }
 
-    val grid = new Grid(gs, tiles, Tile.Wall)
+    val grid = new Grid(gs, tiles, Tile.Floor)
     Option(grid)
   }
 }

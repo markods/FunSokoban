@@ -35,10 +35,10 @@ final class CmdParser(private val gameAssets: GameAssets) extends RegexParsers {
   private def callCommand: Parser[CmdCallBase] = ident ~ "(" ~ repsep(value, ",") ~ ")" ^^ {
     case name ~ "(" ~ literals ~ ")" =>
       name.value match {
-        case "extendRow" => CmdExtendRow(literals)
-        case "extendCol" => CmdExtendCol(literals)
-        case "deleteRow" => CmdDeleteRow(literals)
-        case "deleteCol" => CmdDeleteCol(literals)
+        case "addRow" => CmdAddRow(literals)
+        case "addCol" => CmdAddCol(literals)
+        case "removeRow" => CmdRemoveRow(literals)
+        case "removeCol" => CmdRemoveCol(literals)
         case "setTile" => CmdSetTile(literals)
         case "invertBoxGoal" => CmdInvertBoxGoal(literals)
         case "minimizeWall" => CmdMinimizeWall(literals)

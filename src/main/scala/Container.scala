@@ -10,6 +10,7 @@ final class Container {
   private var gameState: GameState = _
   private var player: Player = _
   private var editor: Editor = _
+  private var solver: Solver = _
   private var playerUndoStack: ActionStack[PlayerAction] = _
   private var editorUndoStack: ActionStack[GridChange] = _
   private var commandParser: CmdParser = _
@@ -23,6 +24,7 @@ final class Container {
     editorUndoStack = new ActionStack[GridChange](GridChangeNone)
     commandParser = new CmdParser(gameAssets)
     editor = new Editor(editorUndoStack)
+    solver = new Solver()
 
     gameState = new GameState(player, editor, playerUndoStack, editorUndoStack)
     gameState.setActiveActor(Player)
@@ -30,7 +32,7 @@ final class Container {
 
     paintAssets = new PaintAssets
     canvas = new Canvas(paintAssets, gameAssets, gameState)
-    mainPanel = new MainPanel(canvas, gameAssets, gameState, commandParser)
+    mainPanel = new MainPanel(canvas, gameAssets, gameState, solver, commandParser)
     mainFrame = new MainFrame(mainPanel, gameAssets.tileIcon(Tile.Box))
   }
 

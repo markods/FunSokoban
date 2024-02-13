@@ -76,13 +76,15 @@ final class BandChange(private val band: TileBandKind,
       return
     }
 
-    // All bounds inclusive.
-    // Row: (idx, 0) -> (idx+count, n-1)
-    // Col: (0, idx) -> (m-1, idx+count)
+    // Area in original/destination grid in which changes will happen. All bounds inclusive.
+    // Original if we're removing bands.  <- WE'RE HERE
+    // Destination if we're adding bands.
+    // Col: (0, idx) -> (m-1, idx + abs(count)-1)
+    // Row: (idx, 0) -> (idx + abs(count)-1, n-1)
     val upBound = band.unitVectorY * idx
-    val downBound = if (band == TileBandKind.Row) idx + count else grid.size.m - 1
     val leftBound = band.unitVectorX * idx
-    val rightBound = if (band == TileBandKind.Column) idx + count else grid.size.n - 1
+    val downBound = if (band.isRow) idx + Math.abs(count) - 1 else grid.size.m - 1
+    val rightBound = if (band.isColumn) idx + Math.abs(count) - 1 else grid.size.n - 1
 
     for (i <- upBound to downBound; j <- leftBound to rightBound) {
       val oldTile = grid.getTile(i, j)

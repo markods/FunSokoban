@@ -34,7 +34,7 @@ sealed abstract class CmdDefBase extends Cmd {
       return s"Command ${cmdDef.name} already exists"
     }
 
-    // Check that parameter names are different.
+    // Check that parameter names are not keywords and are all different.
     var error = ""
     var i = 0
     val cmdDefParamNameToIndex = mutable.HashMap[String, Int]()
@@ -42,6 +42,10 @@ sealed abstract class CmdDefBase extends Cmd {
     def ensureValidParameter(param: CmdParam): Boolean = {
       if (param == NoneParam) {
         error = s"Definition ${cmdDef.name}: invalid syntax at position $i"
+        return false
+      }
+      if (editor.isKeyword(param.name)) {
+        error = s"Definition ${cmdDef.name}: parameter $i cannot be keyword"
         return false
       }
       if (cmdDefParamNameToIndex.contains(param.name)) {
@@ -108,7 +112,7 @@ sealed abstract class CmdDefBase extends Cmd {
       }
 
       val callDef = callDefOrNone.asInstanceOf[CmdDefBase]
-      callDef.params.zip(call.literals).find(ensureValidArgumentForCall)
+      callDef.params.zip(call.literals).forall(ensureValidArgumentForCall)
       if (!error.isBlank) {
         return false
       }
@@ -188,7 +192,7 @@ sealed abstract class CmdCallBase extends Cmd {
       true
     }
 
-    cmdDef.params.zip(literals).find(ensureValidLiteral)
+    cmdDef.params.zip(literals).forall(ensureValidLiteral)
     if (!error.isBlank) {
       return error
     }
@@ -215,6 +219,7 @@ sealed abstract class CmdCallBase extends Cmd {
     val cmdDef = cmdDefOrNone.asInstanceOf[CmdDefBase]
     val isTransaction = cmdDef.isTransaction
     val gridChange = new GridChangeList()
+    var nonUnitSuccessCount = 0
     var successCount = 0
 
     def callSubcommand(call: CmdCallBase): Boolean = {
@@ -229,13 +234,16 @@ sealed abstract class CmdCallBase extends Cmd {
       if (!success) {
         return false
       }
+      if (change != GridChangeUnit) {
+        nonUnitSuccessCount += 1
+      }
       successCount += 1
       true
     }
 
     val isSuccess = cmdDef.commands.forall(callSubcommand)
-    // Undo all changes here, so that we can return a single change that encompasses them all.
-    editor.undoRedo(-successCount)
+    // Undo all non-unit changes here, so that we can return a single change that encompasses them all.
+    editor.undoRedo(-nonUnitSuccessCount)
 
     // At least one command needs to succeed for a function to succeed.
     if (!isTransaction && successCount == 0) {
@@ -261,7 +269,7 @@ sealed case class CmdCall(override val name: String,
 sealed abstract class CmdCallPreDef(override val name: String) extends CmdCallBase {
 }
 
-final case class CmdExtendRow(override val literals: List[CmdLiteral]) extends CmdCallPreDef("extendRow") {
+final case class CmdAddRow(override val literals: List[CmdLiteral]) extends CmdCallPreDef("addRow") {
   protected override def callCmdGetGridChange(editor: Editor): GridChange = {
     val iBetween: Int = editor.cmdLiteralStack.getLiteral(0).asInstanceOf[NumLiteral].value
     val count: Int = editor.cmdLiteralStack.getLiteral(1).asInstanceOf[NumLiteral].value
@@ -273,7 +281,7 @@ final case class CmdExtendRow(override val literals: List[CmdLiteral]) extends C
   }
 }
 
-final case class CmdExtendCol(override val literals: List[CmdLiteral]) extends CmdCallPreDef("extendCol") {
+final case class CmdAddCol(override val literals: List[CmdLiteral]) extends CmdCallPreDef("addCol") {
   protected override def callCmdGetGridChange(editor: Editor): GridChange = {
     val iBetween: Int = editor.cmdLiteralStack.getLiteral(0).asInstanceOf[NumLiteral].value
     val count: Int = editor.cmdLiteralStack.getLiteral(1).asInstanceOf[NumLiteral].value
@@ -285,26 +293,26 @@ final case class CmdExtendCol(override val literals: List[CmdLiteral]) extends C
   }
 }
 
-final case class CmdDeleteRow(override val literals: List[CmdLiteral]) extends CmdCallPreDef("deleteRow") {
+final case class CmdRemoveRow(override val literals: List[CmdLiteral]) extends CmdCallPreDef("removeRow") {
   protected override def callCmdGetGridChange(editor: Editor): GridChange = {
     val iBetween: Int = editor.cmdLiteralStack.getLiteral(0).asInstanceOf[NumLiteral].value
     val count: Int = editor.cmdLiteralStack.getLiteral(1).asInstanceOf[NumLiteral].value
-    if (!editor.checkAddTileBand(TileBandKind.Row, iBetween, -count)) {
+    if (!editor.checkRemoveTileBand(TileBandKind.Row, iBetween, count)) {
       return GridChangeNone
     }
-    val gridChange = editor.addTileBandUnchecked(TileBandKind.Row, iBetween, -count)
+    val gridChange = editor.removeTileBandUnchecked(TileBandKind.Row, iBetween, count)
     gridChange
   }
 }
 
-final case class CmdDeleteCol(override val literals: List[CmdLiteral]) extends CmdCallPreDef("deleteCol") {
+final case class CmdRemoveCol(override val literals: List[CmdLiteral]) extends CmdCallPreDef("removeCol") {
   protected override def callCmdGetGridChange(editor: Editor): GridChange = {
     val iBetween: Int = editor.cmdLiteralStack.getLiteral(0).asInstanceOf[NumLiteral].value
     val count: Int = editor.cmdLiteralStack.getLiteral(1).asInstanceOf[NumLiteral].value
-    if (!editor.checkAddTileBand(TileBandKind.Column, iBetween, -count)) {
+    if (!editor.checkRemoveTileBand(TileBandKind.Column, iBetween, count)) {
       return GridChangeNone
     }
-    val gridChange = editor.addTileBandUnchecked(TileBandKind.Column, iBetween, -count)
+    val gridChange = editor.removeTileBandUnchecked(TileBandKind.Column, iBetween, count)
     gridChange
   }
 }
@@ -315,6 +323,9 @@ final case class CmdSetTile(override val literals: List[CmdLiteral]) extends Cmd
     val tile: Tile = editor.cmdLiteralStack.getLiteral(1).asInstanceOf[TileLiteral].value
     if (!editor.checkSetTile(pos, tile)) {
       return GridChangeNone
+    }
+    if (tile == editor.grid.getTile(pos.i, pos.j)) {
+      return GridChangeUnit
     }
     val gridChange = editor.setTileUnchecked(pos, tile)
     gridChange
@@ -404,15 +415,15 @@ sealed abstract class CmdPreDef(override val name: String,
   override def isTransaction: Boolean = true
 }
 
-final case class CmdExtendRowDef() extends CmdPreDef("extendRow", List[CmdParam](NumParam("iBetween"), NumParam("count")))
+final case class CmdAddRowDef() extends CmdPreDef("addRow", List[CmdParam](NumParam("iBetween"), NumParam("count")))
 
-final case class CmdExtendColDef() extends CmdPreDef("extendCol", List[CmdParam](NumParam("iBetween"), NumParam("count")))
+final case class CmdAddColDef() extends CmdPreDef("addCol", List[CmdParam](NumParam("iBetween"), NumParam("count")))
 
-final case class CmdDeleteRowDef() extends CmdPreDef("deleteRow", List[CmdParam](NumParam("i"), NumParam("n")))
+final case class CmdRemoveRowDef() extends CmdPreDef("removeRow", List[CmdParam](NumParam("i"), NumParam("n")))
 
-final case class CmdDeleteColDef() extends CmdPreDef("deleteCol", List[CmdParam](NumParam("i"), NumParam("n")))
+final case class CmdRemoveColDef() extends CmdPreDef("removeCol", List[CmdParam](NumParam("i"), NumParam("n")))
 
-final case class CmdSetTileDef() extends CmdPreDef("setTile", List[CmdParam](TileParam("t"), PosParam("pos")))
+final case class CmdSetTileDef() extends CmdPreDef("setTile", List[CmdParam](PosParam("pos"), TileParam("t")))
 
 final case class CmdInvertBoxGoalDef() extends CmdPreDef("invertBoxGoal", List[CmdParam]())
 
