@@ -1,19 +1,19 @@
 import scala.collection.mutable
 
 sealed trait GridChange {
-  def apply(grid: Grid): Boolean
+  def applyChange(grid: Grid): Boolean
 
   def undo(grid: Grid): Boolean
 }
 
 object GridChangeNone extends GridChange {
-  def apply(grid: Grid): Boolean = false
+  def applyChange(grid: Grid): Boolean = false
 
   def undo(grid: Grid): Boolean = false
 }
 
 object GridChangeUnit extends GridChange {
-  def apply(grid: Grid): Boolean = true
+  def applyChange(grid: Grid): Boolean = true
 
   def undo(grid: Grid): Boolean = true
 }
@@ -24,17 +24,35 @@ final class GridChangeList extends GridChange {
 
   def isEmpty: Boolean = gridChange.isEmpty
 
-  def addOne(change: GridChange): Unit = {
+  def addOne(change: GridChange): Boolean = {
+    if (change == GridChangeNone) {
+      return false
+    }
+    if (change == GridChangeUnit) {
+      return true
+    }
     gridChange.addOne(change)
+    true
   }
 
-  def addAll(changes: GridChangeList): Unit = {
-    gridChange.addAll(changes.gridChange.filter(change => change != GridChangeNone && change != GridChangeUnit))
+  def addAll(changes: GridChange): Boolean = {
+    val success = changes match {
+      case changeList: GridChangeList =>
+        var addAllSuccess = true
+        gridChange.foreach(change => {
+          addAllSuccess = addAllSuccess && addOne(change)
+        })
+        addAllSuccess
+      case change: GridChange =>
+        gridChange.addOne(change)
+        true
+    }
+    success
   }
 
-  def apply(grid: Grid): Boolean = {
+  def applyChange(grid: Grid): Boolean = {
     for (change <- gridChange) {
-      change.apply(grid)
+      change.applyChange(grid)
     }
     true
   }
@@ -73,7 +91,7 @@ final class BandChange(private val band: TileBandKind,
     }
   }
 
-  def apply(grid: Grid): Boolean = {
+  def applyChange(grid: Grid): Boolean = {
     if (count < 0 && removedTiles.isEmpty) {
       // Only initialize once. The 'apply' action should be 'remove bands'.
       saveToBeRemovedTiles(grid)
@@ -97,7 +115,7 @@ final class TileChange(private val i: Int,
                        private val j: Int,
                        private val oldTile: Tile,
                        private val newTile: Tile) extends GridChange {
-  def apply(grid: Grid): Boolean = {
+  def applyChange(grid: Grid): Boolean = {
     grid.setTile(i, j, newTile)
     true
   }

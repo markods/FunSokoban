@@ -1,7 +1,7 @@
 import scala.util.parsing.combinator.*
 
 // TODO: use fastparse
-class CmdParser(private val gameAssets: GameAssets) extends RegexParsers {
+final class CmdParser(private val gameAssets: GameAssets) extends RegexParsers {
   private def w: Parser[String] = """\s+""".r
 
   private def num: Parser[NumLiteral] = """0|[1-9]\d*""".r ^^ (value => NumLiteral(value.toInt))
@@ -60,8 +60,8 @@ class CmdParser(private val gameAssets: GameAssets) extends RegexParsers {
   // Order is important.
   private def language: Parser[Cmd] = defineCommand | callCommand
 
-  def parse(input: String): Cmd = parseAll(language, input) match {
-    case Success(result, _) => result
-    case failure: NoSuccess => CmdNone
+  def parse(input: String): (Cmd, String) = parseAll(language, input) match {
+    case Success(result, _) => (result, "")
+    case failure: NoSuccess => (CmdNone, failure.msg)
   }
 }

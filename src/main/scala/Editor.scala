@@ -65,22 +65,28 @@ final class Editor(private val undoStack: ActionStack[GridChange]) extends Actor
 
   def redo(): Boolean = {
     val change = undoStack.redoAction()
-    change.apply(editorGrid)
+    change.applyChange(editorGrid)
   }
 
-  def apply(change: GridChange): Unit = {
+  def applyChange(change: GridChange): Boolean = {
+    if (change == GridChangeUnit) {
+      return true
+    }
+    if (!change.applyChange(editorGrid)) {
+      return false
+    }
     undoStack.addAction(change)
-    change.apply(editorGrid)
+    true
   }
 
   def cmdLiteralStack: CmdLiteralStack = commandLiteralStack
 
   def applyCmd(command: Cmd): Boolean = {
-    val change = command.apply(this)
+    val change = command.getGridChange(this)
     if (change == GridChangeUnit) {
       return true
     }
-    undoStack.addAction(change)
+    applyChange(change)
   }
 
   def addUserCmdDef(command: Cmd): Boolean = {

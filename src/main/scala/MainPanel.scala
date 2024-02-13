@@ -676,46 +676,50 @@ final class MainPanel(private val jCanvas: Canvas,
       if (!editor.checkSetTile(editor.position, tile)) {
         return
       }
-      editor.apply(editor.setTileUnchecked(editor.position, tile))
+      editor.applyChange(editor.setTileUnchecked(editor.position, tile))
     }
     jCanvas.repaint()
   }
 
   // TODO: add up/down key handlers that bring up command history
   private def Create_CommandTextAreaEnterTyped(): Unit = {
-    try {
-      val text = jCreate_CommandTextArea.getText()
-      jCreate_CommandTextArea.setText("")
-      if (text.isEmpty) {
-        return
-      }
-
-      val command = commandParser.parse(text)
-      if (command == CmdNone) {
-        return
-      }
-
-      val message = gameState.synchronized {
-        val msg = command.sema(gameState.editor)
-        if (msg.isEmpty) {
-          gameState.editor.applyCmd(command)
-        }
-        msg.getOrElse("")
-      }
-
-      val scrollBar = jCreate_CommandHistoryScrollPane.getVerticalScrollBar
-      val isScrollBarAtBottom = scrollBar.getValue + scrollBar.getVisibleAmount == scrollBar.getMaximum
-      jCreate_CommandHistoryTextArea.append("\n")
-      jCreate_CommandHistoryTextArea.append(text)
-      if (!message.isBlank) {
-        jCreate_CommandHistoryTextArea.append("ERROR: ")
-        jCreate_CommandHistoryTextArea.append(message)
-      }
-      if (isScrollBarAtBottom) {
-        SwingUtilities.invokeLater(() => scrollBar.setValue(scrollBar.getMaximum - scrollBar.getVisibleAmount))
-      }
+    val text = try {
+      jCreate_CommandTextArea.getText().trim
     } catch {
-      case ex: NullPointerException =>
+      case ex: NullPointerException => ""
+    }
+    if (text.isBlank) {
+      return
+    }
+
+    val message = parseCommandAndRun(text)
+
+    val scrollBar = jCreate_CommandHistoryScrollPane.getVerticalScrollBar
+    val isScrollBarAtBottom = scrollBar.getValue + scrollBar.getVisibleAmount == scrollBar.getMaximum
+    jCreate_CommandHistoryTextArea.append(text)
+    if (isScrollBarAtBottom) {
+      SwingUtilities.invokeLater(() => scrollBar.setValue(scrollBar.getMaximum - scrollBar.getVisibleAmount))
+    }
+  }
+
+  private def parseCommandAndRun(input: String): String = {
+    val (command, parseMessage) = commandParser.parse(input)
+    if (!parseMessage.isBlank) {
+      return s"\nERR: $parseMessage"
+    }
+
+    gameState.synchronized {
+      val semaMessage = command.sema(gameState.editor)
+      if (semaMessage.nonEmpty) {
+        return s"\n$input\nERR: $semaMessage"
+      }
+
+      val success = gameState.editor.applyCmd(command)
+      if (!success) {
+        return s"\n$input\nCommand execution failed"
+      }
+
+      s"$input"
     }
   }
 }

@@ -1,12 +1,12 @@
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 
-class CmdLiteralStack {
+final class CmdLiteralStack {
   private val stack: ArrayBuffer[List[CmdLiteral]] = ArrayBuffer()
 
   private def currFrame(i: Int): List[CmdLiteral] = {
     if (i < 0 || i >= stack.size) {
-      return List()
+      return List.empty
     }
     stack(i)
   }
@@ -34,7 +34,9 @@ class CmdLiteralStack {
 
       val literal = frame(i)
       literal match {
-        case ident: IdentLiteral => getLiteralTailrec(frameIdx - 1, ident.outerFrameIdx)
+        case ident: IdentLiteral =>
+          if (ident.isOuterParameter) getLiteralTailrec(frameIdx - 1, ident.idxInOuterFrame)
+          else ident
         case _ => literal
       }
     }
