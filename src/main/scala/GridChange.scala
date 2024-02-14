@@ -10,12 +10,16 @@ object GridChangeNone extends GridChange {
   def applyChange(grid: Grid): Boolean = false
 
   def undo(grid: Grid): Boolean = false
+
+  override def toString: String = "GridChangeNone"
 }
 
 object GridChangeUnit extends GridChange {
   def applyChange(grid: Grid): Boolean = true
 
   def undo(grid: Grid): Boolean = true
+
+  override def toString: String = "GridChangeUnit"
 }
 
 
@@ -44,33 +48,57 @@ final class GridChangeList extends GridChange {
   }
 
   def addAll(changes: GridChange): Boolean = {
-    val success = changes match {
+    changes match {
       case changeList: GridChangeList =>
-        var addAllSuccess = true
+        var success = true
+        // TODO: we should remove all changes if at least one wasn't successful.
         changeList.foreach(change => {
-          addAllSuccess = addAllSuccess && addOne(change)
+          success = success && addOne(change)
         })
-        addAllSuccess
+        success
       case change: GridChange =>
         addOne(change)
-        true
+    }
+  }
+
+  def applyChange(grid: Grid): Boolean = {
+    var success = true
+    // TODO: we should stop on non-success and only undo those actions in reverse.
+    for (change <- gridChange) {
+      success = success && change.applyChange(grid)
+    }
+    // Atomically update the grid.
+    if (!success) {
+      undo(grid)
     }
     success
   }
 
-  def applyChange(grid: Grid): Boolean = {
-    for (change <- gridChange) {
-      change.applyChange(grid)
+  def undo(grid: Grid): Boolean = {
+    var success = true
+    // TODO: we should only undo successful changes from applyChange.
+    for (change <- gridChange.reverseIterator) {
+      success = success && change.undo(grid)
     }
-    true
+    success
   }
 
-  def undo(grid: Grid): Boolean = {
+  override def toString: String = {
+    val strBuilder = StringBuilder("GridChangeList(")
+
+    var i = 0
     for (change <- gridChange) {
-      change.undo(grid)
+      if (i > 0) {
+        strBuilder.addAll(", ")
+      }
+      strBuilder.addAll(change.toString)
+      i += 1
     }
-    true
+
+    strBuilder.addAll(")")
+    strBuilder.mkString
   }
+
 }
 
 final class BandChange(private val band: TileBandKind,
@@ -119,6 +147,8 @@ final class BandChange(private val band: TileBandKind,
     }
     true
   }
+
+  override def toString: String = s"BandChange($band, $idx, $count)"
 }
 
 final class TileChange(private val i: Int,
@@ -134,4 +164,6 @@ final class TileChange(private val i: Int,
     grid.setTile(i, j, oldTile)
     true
   }
+
+  override def toString: String = s"TileChange($i, $j, $oldTile, $newTile)"
 }

@@ -766,6 +766,7 @@ final class MainPanel(private val jCanvas: Canvas,
     }
   }
 
+  // TODO: use another thread for calculations
   private def parseCommandAndRun(input: String): (Boolean, String) = {
     val (command, parseMessage) = commandParser.parse(input)
     if (!parseMessage.isBlank) {

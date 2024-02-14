@@ -156,18 +156,17 @@ final class Grid(private val gs: GridSize,
         appendUnvisited(new GridPosition(position.i + 1, position.j))
         appendUnvisited(new GridPosition(position.i, position.j - 1))
         appendUnvisited(new GridPosition(position.i, position.j + 1))
+
+        // Diagonals. Not necessary if we're just finding the inside area.
+        if (calculateSurfaceLayer) {
+          appendOuterLayer(new GridPosition(position.i - 1, position.j - 1))
+          appendOuterLayer(new GridPosition(position.i + 1, position.j + 1))
+          appendOuterLayer(new GridPosition(position.i + 1, position.j - 1))
+          appendOuterLayer(new GridPosition(position.i - 1, position.j + 1))
+        }
       }
       else if (calculateSurfaceLayer) {
-        // Plus.
-        appendOuterLayer(new GridPosition(position.i - 1, position.j))
-        appendOuterLayer(new GridPosition(position.i + 1, position.j))
-        appendOuterLayer(new GridPosition(position.i, position.j - 1))
-        appendOuterLayer(new GridPosition(position.i, position.j + 1))
-        // Diagonals.
-        appendOuterLayer(new GridPosition(position.i - 1, position.j - 1))
-        appendOuterLayer(new GridPosition(position.i + 1, position.j + 1))
-        appendOuterLayer(new GridPosition(position.i + 1, position.j - 1))
-        appendOuterLayer(new GridPosition(position.i - 1, position.j + 1))
+        appendOuterLayer(position)
       }
 
       if (ff.reachedOutsideGrid && breakOnReachingOutsideGrid) {
@@ -178,6 +177,7 @@ final class Grid(private val gs: GridSize,
     }
 
     floodFillTailrec()
+    ff.surfaceLayer = ff.surfaceLayer.diff(ff.area)
     ff
   }
 

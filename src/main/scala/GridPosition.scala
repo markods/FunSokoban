@@ -10,4 +10,6 @@ final class GridPosition(var i: Int, var j: Int) {
       case _ => false
     }
   }
+
+  override def toString: String = s"GridPosition($i,$j)"
 }

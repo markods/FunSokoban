@@ -367,7 +367,13 @@ final case class CmdFilterWall(override val literals: List[CmdLiteral]) extends 
 final case class CmdFractalizeWall(override val literals: List[CmdLiteral]) extends CmdCallPreDef("fractalizeWall") {
   protected override def callCmdGetGridChange(editor: Editor): GridChange = {
     val pos: GridPosition = editor.cmdLiteralStack.getLiteral(0).asInstanceOf[PosLiteral].value
-    val origin: GridPosition = editor.cmdLiteralStack.getLiteral(1).asInstanceOf[PosLiteral].value
+
+    val playerPositionList = editor.grid.findAll((i, j, tile) => tile.isPlayer)
+    if (playerPositionList.length != 1) {
+      return GridChangeNone
+    }
+    val origin = playerPositionList(0)
+
     if (!editor.checkFractalizeWall(pos, origin)) {
       return GridChangeNone
     }
@@ -377,6 +383,7 @@ final case class CmdFractalizeWall(override val literals: List[CmdLiteral]) exte
 }
 
 final case class CmdValidateLevel(override val literals: List[CmdLiteral]) extends CmdCallPreDef("validateLevel") {
+  // TODO: commands should return a GridChange + error message (if present)
   protected override def callCmdGetGridChange(editor: Editor): GridChange = {
     if (!editor.validateLevel()) {
       return GridChangeNone
