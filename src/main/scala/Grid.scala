@@ -6,11 +6,11 @@ import scala.collection.mutable.ArrayBuffer
 
 final class Grid(private val gs: GridSize,
                  private val defaultTile: Tile) {
-  private val tiles: ArrayBuffer[Tile] = ArrayBuffer.fill(gs.m * gs.n)(defaultTile)
+  private val gridTiles: ArrayBuffer[Tile] = ArrayBuffer.fill(gs.m * gs.n)(defaultTile)
 
   def this(gs: GridSize, tiles: IterableOnce[Tile], defaultTile: Tile) = {
     this(new GridSize(0, 0), defaultTile)
-    this.tiles.addAll(tiles)
+    this.gridTiles.addAll(tiles)
     this.gs.m = gs.m
     this.gs.n = gs.n
   }
@@ -22,17 +22,17 @@ final class Grid(private val gs: GridSize,
   def validBandAddPosition(i: Int, j: Int): Boolean = i >= 0 && i <= gs.m && j >= 0 && j <= gs.n
 
   // Unchecked.
-  def getTile(i: Int, j: Int): Tile = tiles(gs.n * i + j)
+  def getTile(i: Int, j: Int): Tile = gridTiles(gs.n * i + j)
 
-  def getTile(nij: Int): Tile = tiles(nij)
+  def getTile(nij: Int): Tile = gridTiles(nij)
 
   // Unchecked.
   def setTile(i: Int, j: Int, tile: Tile): Unit = {
-    tiles(gs.n * i + j) = tile
+    gridTiles(gs.n * i + j) = tile
   }
 
   def setTile(nij: Int, tile: Tile): Unit = {
-    tiles(nij) = tile
+    gridTiles(nij) = tile
   }
 
   // 1 -> 2 ->
@@ -76,10 +76,16 @@ final class Grid(private val gs: GridSize,
     }
   }
 
+  def foreachNij[U](f: (nij: Int, tile: Tile) => U): Unit = {
+    for (nij <- gridTiles.indices) {
+      f(nij, getTile(nij))
+    }
+  }
+
   def forall(p: (i: Int, j: Int, tile: Tile) => Boolean): Boolean = {
     var i = 0
     var j = 0
-    tiles.forall(tile => {
+    gridTiles.forall(tile => {
       val res = p(i, j, getTile(i, j))
       j += 1
       if (j == gs.n) {
@@ -97,7 +103,7 @@ final class Grid(private val gs: GridSize,
       if (found) {
         result = Option(new GridPosition(i, j))
       }
-      found
+      !found
     })
 
     result
@@ -183,7 +189,7 @@ final class Grid(private val gs: GridSize,
 
   def copy(): Grid = {
     val gridSize = gs
-    val gridNew: Grid = new Grid(new GridSize(gs.m, gs.n), tiles.clone(), defaultTile)
+    val gridNew: Grid = new Grid(new GridSize(gs.m, gs.n), gridTiles.clone(), defaultTile)
     gridNew
   }
 
@@ -197,8 +203,8 @@ final class Grid(private val gs: GridSize,
     // Row: (idx, 0) -> (idx + abs(count)-1, n-1)
     val upBound = band.unitVectorY * idx
     val leftBound = band.unitVectorX * idx
-    val downBound = if (band.isRow) idx + Math.abs(count) - 1 else gs.m - 1
-    val rightBound = if (band.isColumn) idx + Math.abs(count) - 1 else gs.n - 1
+    val downBound = if (band.isRow) idx + math.abs(count) - 1 else gs.m - 1
+    val rightBound = if (band.isColumn) idx + math.abs(count) - 1 else gs.n - 1
 
     val isAdd = count >= 0
     // Check row/column addition.
@@ -231,7 +237,7 @@ final class Grid(private val gs: GridSize,
 
     val gsSrc = new GridSize(gs.m, gs.n)
     val gsDst = new GridSize(gs.m + band.unitVectorY * count, gs.n + band.unitVectorX * count)
-    val gsMax = new GridSize(Math.max(gsSrc.m, gsDst.m), Math.max(gsSrc.n, gsDst.n))
+    val gsMax = new GridSize(math.max(gsSrc.m, gsDst.m), math.max(gsSrc.n, gsDst.n))
     val gsSrcMN = gsSrc.m * gsSrc.n
     val gsDstMN = gsDst.m * gsDst.n
     val tileDiff = if (band.isRow) count * gsSrc.n else gsSrc.m * count
@@ -243,8 +249,8 @@ final class Grid(private val gs: GridSize,
     // Row: (idx, 0) -> (idx + abs(count)-1, n-1)
     val upBound = band.unitVectorY * idx
     val leftBound = band.unitVectorX * idx
-    val downBound = if (band.isRow) idx + Math.abs(count) - 1 else gsMax.m - 1
-    val rightBound = if (band.isColumn) idx + Math.abs(count) - 1 else gsMax.n - 1
+    val downBound = if (band.isRow) idx + math.abs(count) - 1 else gsMax.m - 1
+    val rightBound = if (band.isColumn) idx + math.abs(count) - 1 else gsMax.n - 1
 
 
     // Add tiles if needed.
@@ -257,7 +263,7 @@ final class Grid(private val gs: GridSize,
       var nijSrc = 0
       var nijDst = 0
       val inc = 1
-      val skipInc = inc * (if (band.isRow) gsMax.n - 1 else Math.abs(count) - 1)
+      val skipInc = inc * (if (band.isRow) gsMax.n - 1 else math.abs(count) - 1)
 
       var shouldContinue = true
       while (shouldContinue) {
@@ -282,7 +288,7 @@ final class Grid(private val gs: GridSize,
       var nijSrc = gsSrc.m * gsSrc.n - 1
       var nijDst = gsDst.m * gsDst.n - 1
       val inc = -1
-      val skipInc = inc * (if (band.isRow) gsMax.n - 1 else Math.abs(count) - 1)
+      val skipInc = inc * (if (band.isRow) gsMax.n - 1 else math.abs(count) - 1)
 
       var shouldContinue = true
       while (shouldContinue) {
@@ -315,13 +321,13 @@ final class Grid(private val gs: GridSize,
 
   private def appendTiles(count: Int): Unit = {
     for (i <- 0 until count) {
-      tiles.addOne(defaultTile)
+      gridTiles.addOne(defaultTile)
     }
   }
 
   private def dropRightInPlaceTiles(count: Int): Unit = {
-    tiles.dropRightInPlace(count)
-    tiles.trimToSize()
+    gridTiles.dropRightInPlace(count)
+    gridTiles.trimToSize()
   }
 
 }

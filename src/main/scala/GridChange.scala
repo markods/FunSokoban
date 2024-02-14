@@ -119,8 +119,8 @@ final class BandChange(private val band: TileBandKind,
     // Row: (idx, 0) -> (idx + abs(count)-1, n-1)
     val upBound = band.unitVectorY * idx
     val leftBound = band.unitVectorX * idx
-    val downBound = if (band.isRow) idx + Math.abs(count) - 1 else grid.size.m - 1
-    val rightBound = if (band.isColumn) idx + Math.abs(count) - 1 else grid.size.n - 1
+    val downBound = if (band.isRow) idx + math.abs(count) - 1 else grid.size.m - 1
+    val rightBound = if (band.isColumn) idx + math.abs(count) - 1 else grid.size.n - 1
 
     for (i <- upBound to downBound; j <- leftBound to rightBound) {
       val oldTile = grid.getTile(i, j)

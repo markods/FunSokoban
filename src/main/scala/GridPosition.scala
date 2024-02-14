@@ -1,3 +1,4 @@
+// TODO: make into case class
 final class GridPosition(var i: Int, var j: Int) {
 
   override def hashCode(): Int = 41 * i.hashCode() + j.hashCode()

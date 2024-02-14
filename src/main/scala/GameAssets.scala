@@ -20,6 +20,7 @@ final class GameAssets {
   val zeroTimeString = "00:00:00"
   val defaultGridSize = new GridSize(10, 12)
   val defaultPlayerActionWrap = 80
+  val maxSolverMoves = 1000000
   configure()
 
   def configure(): Unit = {

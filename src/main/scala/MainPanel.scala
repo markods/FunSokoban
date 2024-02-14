@@ -559,26 +559,31 @@ final class MainPanel(private val jCanvas: Canvas,
   }
 
   private def Play_SolveLevel(): Unit = {
-    val gridCopy = synchronized {
-      gameState.grid.copy()
+    val gridCopy: Option[Grid] = synchronized {
+      val editor = gameState.editor
+      if (editor.setGrid(gameState.grid) && editor.validateLevel()) {
+        Option(gameState.grid.copy())
+      }
+      else {
+        Option.empty
+      }
+    }
+    if (gridCopy.isEmpty) {
+      return
     }
 
-    val moves = solver.solve(gridCopy)
-    if (moves.size == 0) {
+    val moves = solver.solveUnchecked(gridCopy.get, gameAssets.maxSolverMoves)
+    if (moves.isEmpty) {
       return
     }
 
     gameState.synchronized {
-      // Reset board.
-      val grid = readLevelFromFile(gameState.level)
-      if (grid.isEmpty) {
-        return
-      }
-      gameState.setLevel(gameState.level, grid.get)
-
-      // Do all moves until one fails.
       val player = gameState.player
-      while (player.move(moves.redoAction())) {}
+      // Do all moves until one fails.
+      var i = 0
+      while (player.move(moves(i))) {
+        i += 1
+      }
       player.undoRedo(-player.moveNumber)
     }
   }

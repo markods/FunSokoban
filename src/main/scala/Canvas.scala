@@ -26,7 +26,7 @@ final class Canvas(private val paintAssets: PaintAssets,
     val boundsLeftX = pa.gridMarginThickness + canvasWidth * pa.recenterPlayerThreshold / 100
     val boundsRightX = canvasWidth - canvasWidth * pa.recenterPlayerThreshold / 100
 
-    gridOriginOut.x += Math.max(boundsLeftX - playerLeftX, 0) - Math.max(playerRightX - boundsRightX, 0)
+    gridOriginOut.x += math.max(boundsLeftX - playerLeftX, 0) - math.max(playerRightX - boundsRightX, 0)
 
     val playerUpY = gridOriginOut.y + focusedPosition.i * tileDim.height
     val playerDownY = playerUpY + tileDim.height
@@ -34,7 +34,7 @@ final class Canvas(private val paintAssets: PaintAssets,
     val boundsUpY = pa.gridMarginThickness + canvasHeight * pa.recenterPlayerThreshold / 100
     val boundsDownY = canvasHeight - canvasHeight * pa.recenterPlayerThreshold / 100
 
-    gridOriginOut.y += Math.max(boundsUpY - playerUpY, 0) - Math.max(playerDownY - boundsDownY, 0)
+    gridOriginOut.y += math.max(boundsUpY - playerUpY, 0) - math.max(playerDownY - boundsDownY, 0)
   }
 
   private def clearCanvas(g: Graphics2D): Unit = {
